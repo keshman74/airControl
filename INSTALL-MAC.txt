@@ -1,0 +1,23 @@
+airCloudCTRL v3.0 — clean install on macOS
+
+1. Unzip the archive to a NEW folder. Do not copy it over the old v2.0 folder.
+2. Open Terminal.
+3. Go to the new project folder, for example:
+   cd "/Users/lab/AI/airCloudCTRL GPT/airCloudCTRL v3.0"
+4. Install dependencies once:
+   npm install
+5. Start the app:
+   npm run dev
+
+Verified device transport baseline:
+- airCloud / CLOUDIX A33: HTTP :8000 or HTTPS :8443
+- airScope / Linkplay A31: HTTP :80
+- WiiM / newer Linkplay: HTTPS :443, including self-signed device certificates
+
+Known verified WiiM test device:
+- IP used during development: 192.168.0.8
+- DeviceName: Гостиная
+- project: WiiM_Pro_with_gc4a
+- hardware: AmlogicA113
+
+Important: keep the old v2.0 folder as a backup until v3.0 has been tested.

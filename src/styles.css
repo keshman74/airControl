@@ -1,0 +1,1738 @@
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e8f0fb;background:#07101c;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#07101c}button,input,select{font:inherit}button{color:inherit;border:0;cursor:pointer}
+.app{height:100vh;background:radial-gradient(circle at 70% 20%,rgba(19,63,120,.12),transparent 34%),#07101c}
+.topbar{height:72px;border-bottom:1px solid #1c2b40;display:flex;align-items:center;justify-content:space-between;padding:0 22px;background:#081321}
+.brand{display:flex;gap:12px;align-items:center}.brandIcon{width:42px;height:42px;border:2px solid #1687ff;border-radius:13px;display:grid;place-items:center;color:#1687ff}.brandName{font-size:20px;font-weight:700;letter-spacing:-.4px}.brandSub{font-size:11px;color:#7890aa;margin-top:1px}.topActions{display:flex;align-items:center;gap:12px}.segmented{border:1px solid #273951;background:#0b1727;border-radius:24px;padding:2px;display:flex}.segmented button{background:transparent;padding:8px 18px;border-radius:20px;color:#8ea2bb;font-size:12px}.segmented .active{background:#147df5;color:#fff}.divider{height:28px;width:1px;background:#24354a}.iconBtn{background:transparent;color:#91a5bd;padding:8px;border-radius:9px}.iconBtn:hover{background:#122238;color:#fff}
+.layout{display:flex;height:calc(100vh - 106px)}.sidebar{width:205px;border-right:1px solid #1b2a3e;background:#081321;display:flex;flex-direction:column;padding:12px 10px}.sideItem{display:flex;align-items:center;gap:13px;background:transparent;color:#91a5bd;padding:12px 13px;border-radius:8px;margin:2px 0;text-align:left;font-size:14px}.sideItem:hover,.sideItem.selected{background:#0e2645;color:#eaf4ff}.sideItem.selected{box-shadow:inset 2px 0 #1b8bff}.sideBottom{margin-top:auto;border-top:1px solid #1b2a3e;padding:18px 10px 4px;color:#9badc1;font-size:12px;line-height:1.7}.sideBottom small{color:#5d718a}.onlineDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#36d487;box-shadow:0 0 8px #36d487}
+.content{display:flex;min-width:0;flex:1}.deviceColumn{width:315px;padding:18px 14px;border-right:1px solid #1b2a3e;overflow:auto}.sectionHead{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px}.sectionHead h1{font-size:20px;margin:0}.primaryBtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:#1685ff;color:#fff;border-radius:7px;padding:9px 13px;font-size:12px;font-weight:600;box-shadow:0 5px 18px rgba(0,120,255,.16)}.primaryBtn:hover{background:#2a94ff}.ghostBtn,.dangerBtn,.wideBtn{border:1px solid #30445e;background:#0d1b2c;border-radius:7px;padding:9px 13px;color:#b8c8da;font-size:12px}.dangerBtn{border-color:#633842;color:#ff9ca8}.wideBtn{width:100%;margin-top:14px}.search{height:37px;border:1px solid #2b3d54;background:#0b1727;border-radius:7px;display:flex;align-items:center;gap:8px;padding:0 10px;color:#657c96;margin-bottom:12px}.search input{border:0;outline:0;background:transparent;color:#dbe8f7;width:100%;font-size:12px}.deviceCard{width:100%;display:flex;align-items:center;gap:10px;background:#0b1727;border:1px solid #20334b;border-radius:8px;padding:12px;margin-bottom:10px;text-align:left}.deviceCard:hover{border-color:#35658f}.deviceCard.selected{border-color:#188cff;box-shadow:0 0 0 1px rgba(24,140,255,.18) inset;background:#0d1e32}.deviceThumb{width:56px;height:48px;border-radius:6px;background:linear-gradient(145deg,#202e3e,#0d1723);display:grid;place-items:center;color:#7088a1}.deviceInfo{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}.deviceInfo strong{font-size:13px;color:#e9f1fb}.deviceInfo span{font-size:10px;color:#7890aa}.status{display:flex!important;align-items:center;gap:5px}.status i{width:6px;height:6px;border-radius:50%;background:#4d6075}.status.online{color:#49d98e}.status.online i{background:#39d48a}.workspace{flex:1;overflow:auto;padding:10px 22px 28px;min-width:0}.deviceHero{height:144px;border:1px solid #203249;background:linear-gradient(120deg,#0c1827,#0b1522);border-radius:10px;display:flex;align-items:center;padding:18px;gap:18px}.heroDevice{width:108px;height:105px;background:linear-gradient(145deg,#283646,#0b141f);border-radius:8px;display:grid;place-items:center;color:#73879c}.heroInfo{min-width:250px}.heroTitle{font-size:22px;font-weight:650}.heroMeta{font-size:12px;color:#8da2ba;margin:6px 0}.heroMeta span,.heroStatus span{padding:0 6px;color:#4f6680}.heroStatus{font-size:11px;color:#7e95ad;display:flex;align-items:center}.edit{font-size:14px;color:#7891ab;margin-left:4px}.heroStates{margin-left:auto;display:flex;height:72px;border:1px solid #1d3047;border-radius:7px;overflow:hidden}.heroStates>div{min-width:120px;padding:12px 15px;display:grid;grid-template-columns:22px 1fr;column-gap:7px;align-content:center;border-left:1px solid #1d3047}.heroStates>div:first-child{border-left:0}.heroStates svg{grid-row:1/3;color:#a6bad0}.heroStates b{font-size:11px}.heroStates span{font-size:10px;color:#67d99a}.tabs{height:55px;display:flex;align-items:end;border-bottom:1px solid #26384f;gap:4px;overflow:auto}.tabs button{height:44px;background:transparent;color:#8ca0b8;padding:0 14px;font-size:12px;white-space:nowrap;border-bottom:3px solid transparent}.tabs button.active{color:#1990ff;border-bottom-color:#1688ff}
+.overview{padding-top:15px}.topPanels{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{background:linear-gradient(145deg,#0b1828,#091421);border:1px solid #203249;border-radius:9px;padding:16px}.panelTitle{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:15px}.panelTitle h2{font-size:15px;margin:0 0 3px}.panelTitle p{font-size:10px;color:#70869f;margin:0}.track{display:flex;gap:14px;align-items:center}.albumArt{width:105px;height:105px;border-radius:8px;background:linear-gradient(135deg,#365c75,#111e2d);display:grid;place-items:center;color:#9cc3df}.trackInfo{display:flex;flex-direction:column;gap:4px}.trackInfo strong{font-size:16px}.trackInfo span{font-size:12px;color:#9fb1c5}.trackInfo small{font-size:10px;color:#687e98}.progress{height:4px;background:#2b3b50;border-radius:10px;margin-top:15px;overflow:hidden}.progress span{height:100%;display:block;background:#168bff;border-radius:10px}.time{display:flex;justify-content:space-between;color:#6f849b;font-size:10px;margin-top:6px}.transport{display:flex;align-items:center;justify-content:center;gap:28px;margin-top:9px}.transport button{background:transparent;color:#bdcde0;font-size:15px;padding:8px}.transport .play{width:42px;height:42px;border-radius:50%;background:#243247;border:1px solid #3b4c64;display:grid;place-items:center}.quickGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.quickGrid button{min-height:83px;background:#102033;border:1px solid #243a54;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#b9cbe0}.quickGrid button:hover{border-color:#267fbe}.quickGrid span{font-size:11px}.quickGrid small{font-size:9px;color:#6e87a2}.rotate180{transform:rotate(180deg)}.volIcon{font-size:19px}.metricGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:14px}.metric{min-height:115px;display:flex;align-items:center;gap:10px}.metric>svg{color:#8ba1b8}.metric>div{flex:1;display:flex;flex-direction:column;gap:5px}.metric span{font-size:10px;color:#71869d}.metric strong{font-size:13px}.metric em{font-style:normal;color:#4bd98f;font-size:9px;margin-left:5px}.metric small{font-size:9px;color:#70859e}.range{width:100%;accent-color:#168bff}.featureGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}.feature{min-height:75px;display:flex;align-items:center;gap:12px;text-align:left;background:#0b1828;border:1px solid #203249;border-radius:8px;padding:13px}.feature:hover{border-color:#2c5d87}.feature>svg{width:30px;height:30px;padding:6px;border-radius:7px;background:#12263c;color:#a4c7e8}.feature div{flex:1;display:flex;flex-direction:column;gap:4px}.feature b{font-size:12px}.feature span{font-size:9px;color:#71869d}
+.single{padding-top:15px;display:grid;grid-template-columns:1fr;gap:14px}.playerBig{text-align:center;max-width:620px;margin:auto;padding:20px}.albumArt.big{width:180px;height:180px;margin:0 auto 16px}.playerBig h2{margin:0;font-size:20px}.playerBig p{margin:5px;color:#71879f;font-size:12px}.formGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:13px}.formGrid label,label{display:flex;flex-direction:column;gap:6px;color:#8ea4bc;font-size:11px}.formGrid input,.formGrid select,input,select{background:#0b1727;color:#d8e5f4;border:1px solid #293e57;border-radius:6px;padding:9px;outline:none}.sourceGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.source{display:flex;align-items:center;gap:12px;text-align:left;padding:15px;background:#0b1828;border:1px solid #203249;border-radius:8px}.source.selected{border-color:#168bff;background:#0d2138}.source svg{color:#7da4c9}.source div{display:flex;flex-direction:column;gap:4px}.source b{font-size:12px}.source span{font-size:9px;color:#6d829b}.volumeBig{display:flex;align-items:baseline;justify-content:center;gap:8px;margin:25px}.volumeBig strong{font-size:58px}.volumeBig span{color:#647b95}.range.huge{height:8px}.volumeActions{display:flex;justify-content:center;gap:10px;margin:20px}.volumeActions button{min-width:100px;padding:11px;background:#112238;border:1px solid #29415d;border-radius:7px}.eqTabs{display:flex;gap:8px;margin-bottom:15px}.eqTabs button{background:#0d1a2b;border:1px solid #263b54;padding:9px 14px;border-radius:6px;font-size:11px;color:#8da1b7}.eqTabs .active{background:#123457;border-color:#168bff;color:#fff}.eqRow{display:flex;gap:15px;align-items:end}.eqRow label{width:260px}.eqGraph{height:290px;display:flex;align-items:center;justify-content:space-around;border:1px solid #1f334b;border-radius:8px;margin-top:20px;padding:20px;background:linear-gradient(180deg,rgba(24,139,255,.04),transparent)}.eqBand{height:230px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:15px}.eqBand input{writing-mode:vertical-lr;direction:rtl;height:190px;accent-color:#168bff;padding:0;border:0}.eqBand span{font-size:9px;color:#6d839b}.eqBottom{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.eqBottom input{accent-color:#168bff}.networkStatus,.multiHero{display:flex;align-items:center;gap:14px;padding:18px;background:#0c1a2a;border:1px solid #20364f;border-radius:8px;margin-bottom:16px}.networkStatus>svg,.multiHero>svg{color:#75a8d5}.networkStatus div,.multiHero div{display:flex;flex-direction:column;gap:4px;flex:1}.networkStatus b,.multiHero strong{font-size:13px}.networkStatus span,.multiHero span{font-size:10px;color:#6f869e}.toggle{background:#168bff;border-radius:20px;padding:7px 14px;font-size:10px}.actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}.trackList{display:flex;flex-direction:column;gap:7px}.trackList button{display:flex;align-items:center;gap:10px;padding:11px;background:#0c1928;border:1px solid #203249;border-radius:7px;text-align:left}.trackList span{flex:1;font-size:11px}.infoGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.infoGrid div{background:#0c1928;border:1px solid #203249;border-radius:7px;padding:13px;display:flex;flex-direction:column;gap:7px}.infoGrid span{font-size:9px;color:#70869f}.infoGrid b{font-size:11px}.installer{margin-top:14px}.consoleRow{display:flex;gap:10px}.consoleRow select{flex:1}.console{background:#050b12;border:1px solid #1d3148;color:#7ee2b1;padding:14px;border-radius:7px;min-height:120px;overflow:auto;font-size:11px}.apiGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-height:260px;overflow:auto}.apiChip{padding:9px;background:#0b1624;border:1px solid #1d3046;border-radius:6px}.apiChip span{display:block;color:#5f7893;font-size:8px;margin-bottom:4px}.apiChip code{font-size:9px;color:#b9cbe0}.footer{height:34px;border-top:1px solid #1b2a3e;background:#081321;display:flex;align-items:center;padding:0 22px;gap:8px;font-size:10px;color:#849ab2}.footer b{color:#3d5269}.footerRight{margin-left:auto}.modalBackdrop{position:fixed;inset:0;background:rgba(2,7,13,.72);display:grid;place-items:center;z-index:10}.modal{width:440px;background:#0b1828;border:1px solid #2a405b;border-radius:10px;padding:20px;box-shadow:0 25px 80px rgba(0,0,0,.55)}.modalHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modalHead h2{margin:0;font-size:17px}.modal label{margin-bottom:13px}.twoCol{display:grid;grid-template-columns:1fr 100px;gap:12px}.check{display:flex;flex-direction:row;align-items:center}.check input{accent-color:#168bff}.modalActions{display:flex;justify-content:flex-end;gap:9px;margin-top:20px}.toast{position:fixed;right:22px;bottom:55px;background:#10243a;border:1px solid #2e5c83;color:#dceeff;padding:10px 14px;border-radius:7px;font-size:11px;z-index:20;box-shadow:0 12px 40px rgba(0,0,0,.4)}
+@media(max-width:1250px){.metricGrid{grid-template-columns:repeat(2,1fr)}.featureGrid{grid-template-columns:repeat(2,1fr)}.heroStates>div{min-width:95px}.sourceGrid{grid-template-columns:repeat(2,1fr)}}
+
+/* v0.2 live-device additions */
+.liveBadge{display:inline-flex;align-items:center;margin-left:10px;padding:3px 7px;border:1px solid rgba(87,226,143,.28);border-radius:999px;font-size:10px;letter-spacing:.08em;color:#75e2a2;background:rgba(63,181,112,.09);vertical-align:middle}
+.liveBadge.demo{color:#e4bc70;border-color:rgba(228,188,112,.28);background:rgba(228,188,112,.08)}
+.panelTitleAction{display:flex;align-items:center;gap:10px}.miniRefresh{display:flex;align-items:center;gap:6px;background:#0e1b2d;color:#9fb3ca;border:1px solid #1c3048;border-radius:8px;padding:6px 9px;font-size:11px}.miniRefresh:hover{color:#fff;border-color:#34516f}
+.albumArt{overflow:hidden}.albumArt img{width:100%;height:100%;object-fit:cover;display:block}.albumArt.big{width:128px;height:128px}.bigTrack{justify-content:center;max-width:720px;margin:8px auto 18px}.bigTrack .trackInfo{max-width:520px}.bigTrack .trackInfo strong{font-size:22px;line-height:1.3}.bigTrack .trackInfo span{font-size:14px}.seekRange{max-width:760px;margin:12px auto 4px;display:block;width:100%}.spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.rawDetails{margin-top:18px;border-top:1px solid #17283b;padding-top:14px}.rawDetails summary{cursor:pointer;color:#92a8c0;font-size:13px}.rawDetails .console{margin-top:12px;max-height:420px}.helperText{color:#7f93aa;font-size:13px;line-height:1.55;margin-top:18px}.bootError{display:grid;place-items:center;min-height:100vh;background:#07101c;color:#fff;font-family:Inter,system-ui,sans-serif}.offlineDot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#6f7d8a;margin-right:6px}
+
+/* v0.2.5 — real EQ editor */
+.eqModeBar{display:flex;align-items:end;justify-content:space-between;gap:18px;padding:14px;border:1px solid #20364f;background:#0a1726;border-radius:8px;margin-bottom:14px}.eqModeBar label{min-width:290px}.eqStatusPills{display:flex;gap:8px;flex-wrap:wrap}.eqStatusPills span{font-size:10px;color:#9db1c8;background:#101f31;border:1px solid #263b54;border-radius:999px;padding:7px 10px}.eqMessage{margin:0 0 14px;padding:10px 12px;border:1px solid #2c4d6d;background:#0d2034;border-radius:7px;color:#acd4f7;font-size:11px}.eqEditorHead{display:flex;align-items:end;justify-content:space-between;gap:20px;margin:10px 0 4px}.eqEditorHead>label{min-width:280px}.eqEditorHead .actions{margin:0}.realEqGraph{height:330px}.realEqGraph .eqBand{height:270px}.realEqGraph .eqBand input{height:205px}.realEqGraph .eqBand b{font-size:10px;font-weight:600;color:#a9c0d8;min-width:42px;text-align:center}.eqScaleNote{font-size:10px;color:#70869f;margin-top:10px;line-height:1.5}.eqScaleNote code,.toneReadout code{color:#a9d3ff}.toneReadout{display:grid;grid-template-columns:repeat(2,minmax(180px,260px));gap:14px;align-items:stretch}.toneReadout>div{background:#0b1929;border:1px solid #20364f;border-radius:9px;padding:22px;display:flex;flex-direction:column;gap:5px}.toneReadout span{font-size:11px;color:#8298b0}.toneReadout strong{font-size:44px;line-height:1}.toneReadout small{font-size:9px;color:#5f7690}.toneReadout p{grid-column:1/-1;color:#7f94ad;font-size:11px;line-height:1.6;margin:4px 0}.peqTableWrap{overflow:auto;border:1px solid #20364f;border-radius:8px;margin-top:16px}.peqTable{width:100%;border-collapse:collapse;min-width:800px}.peqTable th{position:sticky;top:0;background:#0d1c2d;color:#7890aa;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.06em;padding:10px;border-bottom:1px solid #26394f}.peqTable td{padding:8px 10px;border-bottom:1px solid #17293d;font-size:11px}.peqTable tr:last-child td{border-bottom:0}.peqTable select,.peqTable input[type=number]{padding:7px 8px;min-width:76px}.peqTable td:first-child{width:42px;color:#62809f;font-weight:700}.peqNumber,.peqGain{display:flex;align-items:center;gap:7px}.peqNumber span,.peqGain span{font-size:9px;color:#687f98}.peqNumber input{width:110px}.peqGain input[type=range]{min-width:130px;accent-color:#168bff;border:0;padding:0}.peqGain input[type=number]{width:78px}.primaryBtn:disabled,.ghostBtn:disabled,.miniRefresh:disabled{opacity:.55;cursor:default}
+@media(max-width:1250px){.eqModeBar,.eqEditorHead{align-items:stretch;flex-direction:column}.eqEditorHead .actions{justify-content:flex-start}.toneReadout{grid-template-columns:1fr 1fr}}
+
+/* v0.2.6 — verified Bass/Treble editor */
+.toneEditor{display:flex;flex-direction:column;gap:16px}.toneControls{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:14px}.toneControl{background:#0b1929;border:1px solid #20364f;border-radius:9px;padding:20px}.toneControlHead{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin-bottom:18px}.toneControlHead span{font-size:11px;color:#8298b0}.toneControlHead strong{font-size:30px;line-height:1;color:#dce9f7}.toneControl input[type=range]{width:100%;accent-color:#168bff;border:0;padding:0}.toneScale{display:flex;justify-content:space-between;color:#60778f;font-size:9px;margin-top:6px}.toneNumber{width:90px;margin-top:14px}.toneFooter{display:flex;align-items:end;justify-content:space-between;gap:18px}.toneFooter .eqScaleNote{margin:0;max-width:720px}@media(max-width:1050px){.toneControls{grid-template-columns:1fr}.toneFooter{align-items:stretch;flex-direction:column}.toneFooter .primaryBtn{align-self:flex-start}}
+
+/* v0.2.7 — richer Player / Now Playing */
+.playerPanel{overflow:hidden}.nowPlayingBig{max-width:880px;padding:24px 18px 12px}.nowPlayingHero{display:grid!important;grid-template-columns:220px minmax(0,1fr);gap:28px;align-items:center;text-align:left;max-width:820px!important;margin:6px auto 22px!important}.nowPlayingHero .albumArt.big{width:220px;height:220px;margin:0;border-radius:14px;box-shadow:0 18px 45px rgba(0,0,0,.35);border:1px solid #29425f;background:linear-gradient(145deg,#294a66,#101c2a)}.nowPlayingHero .trackInfo{max-width:none!important;gap:9px}.nowPlayingHero .trackInfo strong{font-size:30px!important;line-height:1.12!important;letter-spacing:-.5px;overflow-wrap:anywhere}.nowPlayingHero .trackInfo>span{font-size:18px!important;color:#b6cae0!important}.nowPlayingHero .trackInfo>small{font-size:13px!important;color:#7f96af!important}.nowPlayingEyebrow{display:flex;align-items:center;gap:10px;color:#6785a4;font-size:9px;letter-spacing:.16em;font-weight:700}.nowPlayingEyebrow span{letter-spacing:.03em;color:#9bcaff;border:1px solid #25496d;background:#0d2237;border-radius:999px;padding:5px 8px}.metaBadges{display:flex;gap:7px;flex-wrap:wrap;margin-top:5px}.metaBadges span{font-size:9px!important;color:#8fa8c1!important;border:1px solid #263b54;background:#0b1a2a;border-radius:999px;padding:5px 8px}.seekBlock{max-width:820px;margin:0 auto}.seekBlock .seekRange{max-width:none;margin:0;width:100%;accent-color:#168bff}.seekBlock .time{margin-top:7px}.nowPlayingBig .transport{gap:34px;margin-top:16px}.nowPlayingBig .transport button{width:42px;height:42px;border-radius:50%;background:#0e1d2e;border:1px solid #233b55}.nowPlayingBig .transport button:hover{border-color:#3976a9;color:#fff}.nowPlayingBig .transport .play{width:58px;height:58px;background:#168bff;border-color:#168bff;color:#fff;box-shadow:0 8px 24px rgba(22,139,255,.24)}
+@media(max-width:1000px){.nowPlayingHero{grid-template-columns:170px minmax(0,1fr)}.nowPlayingHero .albumArt.big{width:170px;height:170px}.nowPlayingHero .trackInfo strong{font-size:24px!important}}
+
+/* v0.2.7.2 Player compact layout */
+.nowPlayingBig{max-width:840px!important;padding:12px 14px 4px!important}.nowPlayingHero{grid-template-columns:176px minmax(0,1fr)!important;gap:24px!important;max-width:760px!important;margin:2px auto 12px!important}.nowPlayingHero .albumArt.big{width:176px!important;height:176px!important;border-radius:12px!important}.nowPlayingHero .trackInfo{gap:6px!important}.nowPlayingHero .trackInfo strong{font-size:27px!important}.nowPlayingHero .trackInfo>span{font-size:16px!important}.nowPlayingHero .trackInfo>small{font-size:12px!important}.metaBadges{margin-top:3px!important}.seekBlock{max-width:760px!important}.nowPlayingBig .transport{margin-top:9px!important;gap:28px!important}.nowPlayingBig .transport .play{width:52px!important;height:52px!important}.nowPlayingBig .transport button{width:38px!important;height:38px!important}.playerPanel .panelTitle{margin-bottom:8px!important}
+@media(max-width:1000px){.nowPlayingHero{grid-template-columns:150px minmax(0,1fr)!important}.nowPlayingHero .albumArt.big{width:150px!important;height:150px!important}.nowPlayingHero .trackInfo strong{font-size:23px!important}}
+
+/* v0.2.8 — verified USB browser/player */
+.usbPage{gap:14px}.usbNowPanel{overflow:hidden}.usbRefresh{display:flex;align-items:center;gap:7px}.usbRefresh:disabled{opacity:.65;cursor:default}.usbNow{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:16px;align-items:center}.usbDiskIcon{width:58px;height:58px;border-radius:12px;display:grid;place-items:center;background:#0d2237;border:1px solid #28435f;color:#8db9df}.usbNowMeta{min-width:0;display:flex;flex-direction:column;gap:5px}.usbNowMeta strong{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.usbNowMeta>span{font-size:11px;color:#98adc3}.usbNowMeta small{font-size:9px;color:#687f98;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.usbStatusLine{display:flex;align-items:center;gap:6px;font-size:9px;color:#6f879f;text-transform:uppercase;letter-spacing:.08em}.usbDot{width:7px;height:7px;border-radius:50%;background:#68798d}.usbDot.ready{background:#4bd98f;box-shadow:0 0 10px rgba(75,217,143,.35)}.usbTransport{display:flex;align-items:center;gap:8px}.usbTransport button{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#0d1d2e;border:1px solid #27405b;color:#b8cce0;font-size:22px}.usbTransport button:hover{border-color:#3976a9;color:#fff}.usbTransport .usbPlay{width:44px;height:44px;background:#168bff;border-color:#168bff;color:#fff}.usbProgress{height:5px;margin-top:16px;background:#24364b;border-radius:999px;overflow:hidden}.usbProgress>div{height:100%;background:#168bff;border-radius:999px;transition:width .3s ease}.usbTime{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:#6f859d}.usbTrackList{display:flex;flex-direction:column;gap:7px;max-height:490px;overflow:auto;padding-right:3px}.usbTrack{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;gap:10px;align-items:center;width:100%;padding:10px 11px;background:#0b1828;border:1px solid #203249;border-radius:8px;text-align:left;color:#d7e4f2}.usbTrack:hover{border-color:#315b80;background:#0d1c2d}.usbTrack.active{border-color:#168bff;background:#0d2238;box-shadow:inset 3px 0 0 #168bff}.usbTrackNo{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;background:#102238;color:#7893ad;font-size:10px}.usbTrackText{min-width:0;display:flex;flex-direction:column;gap:4px}.usbTrackText b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.usbTrackText small{font-size:9px;color:#6f849d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.usbTrackDeviceIndex{font-size:9px;color:#617991;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.usbPlaying{font-size:8px;font-weight:700;letter-spacing:.08em;color:#7bc1ff;border:1px solid #2c5d87;background:#0c2943;padding:4px 6px;border-radius:999px}.usbEmpty,.usbError{padding:24px;border:1px dashed #28405a;border-radius:8px;text-align:center;color:#7188a0;font-size:11px}.usbError{color:#e0a5a5;border-color:#633a45;background:#24141a}
+@media(max-width:900px){.usbNow{grid-template-columns:54px minmax(0,1fr)}.usbTransport{grid-column:1/-1;justify-content:center}.usbTrack{grid-template-columns:32px minmax(0,1fr) auto}.usbPlaying{display:none}}
+
+/* v0.2.9 Room EQ / measurement */
+.roomEq{display:flex;flex-direction:column;gap:14px}.roomEqIntro{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 16px;border:1px solid #24415e;background:#0b1b2d;border-radius:9px}.roomEqIntro>div:first-child{display:flex;flex-direction:column;gap:5px}.roomEqIntro b{font-size:13px}.roomEqIntro span{font-size:10px;color:#7f98b2}.roomEqBadge{font-size:9px;font-weight:800;letter-spacing:.08em;padding:7px 9px;border:1px solid #2e6694;border-radius:999px;color:#9ed0ff;background:#0c2740}.roomEqGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.roomCard{border:1px solid #20364f;background:#091725;border-radius:9px;padding:16px}.roomCard h4{margin:0 0 13px;font-size:12px;color:#d8e7f7}.roomCard .actions{margin-top:13px}.signalChoices{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.signalChoices button{background:#0d1c2d;border:1px solid #263b54;color:#8ca3bc;border-radius:7px;padding:10px 8px;font-size:10px}.signalChoices button.active{background:#123457;border-color:#168bff;color:#fff}.roomActions{justify-content:flex-start}.roomSmall{margin-top:10px;color:#677f98;font-size:9px;line-height:1.5;word-break:break-all}.micRow{display:grid;grid-template-columns:1fr auto;gap:8px}.micMeter{height:28px;margin-top:12px;position:relative;overflow:hidden;border:1px solid #263b54;border-radius:7px;background:#06111d}.micMeterFill{position:absolute;left:0;top:0;bottom:0;width:100%;background:#31536f;transform:scaleX(0);transform-origin:left center;transition:none;will-change:transform;backface-visibility:hidden;contain:paint;pointer-events:none}.micMeterFill.good{background:#286c55}.micMeterFill.hot{background:#8a4d38}.micMeter span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#dbeafb;text-shadow:0 1px 2px #000}.roomGraphCard{padding-bottom:12px}.roomGraphHead{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:10px}.roomGraphHead h4{margin:0 0 4px}.roomGraphHead span{font-size:9px;color:#6e879f}.targetSelect label{min-width:150px}.roomGraph{display:block;width:100%;height:245px;border:1px solid #1e3349;border-radius:8px;background:#07131f}.roomGraph text{font-size:8px;fill:#5d7892}.gridLine{stroke:#193047;stroke-width:1}.measureCurve{fill:none;stroke:#63b7ff;stroke-width:2.4;vector-effect:non-scaling-stroke}.targetCurve{fill:none;stroke:#9ba8b7;stroke-width:1.4;stroke-dasharray:5 5;vector-effect:non-scaling-stroke}.graphLegend{display:flex;gap:17px;margin-top:8px;color:#71879e;font-size:9px}.graphLegend span{display:flex;align-items:center;gap:6px}.graphLegend i{display:inline-block;width:18px;height:2px}.legendMeasure{background:#63b7ff}.legendTarget{border-top:2px dashed #9ba8b7}.measureBar{display:flex;gap:8px;margin-top:12px}.roomSuggestion{overflow:auto;border:1px solid #1e3349;border-radius:8px}.roomSuggestion table{width:100%;border-collapse:collapse;min-width:520px}.roomSuggestion th,.roomSuggestion td{text-align:left;padding:8px 10px;border-bottom:1px solid #172b3f;font-size:10px}.roomSuggestion th{color:#728aa3;background:#0c1b2a;font-size:8px;text-transform:uppercase;letter-spacing:.05em}.roomSuggestion tr:last-child td{border-bottom:0}.roomEmpty{padding:24px;border:1px dashed #28425d;border-radius:8px;text-align:center;color:#68819a;font-size:10px}.roomStatus{padding:11px 13px;border:1px solid #2a4b69;border-radius:8px;background:#0b2033;color:#a8cce9;font-size:10px;line-height:1.5}.roomWarning{padding:12px 14px;border-left:3px solid #7b6032;background:#19170f;color:#a99e84;font-size:9px;line-height:1.55;border-radius:4px}.roomWarning b{color:#d4c59f}@media(max-width:1100px){.roomEqGrid{grid-template-columns:1fr}.roomGraph{height:210px}.signalChoices{grid-template-columns:1fr}.roomGraphHead{align-items:stretch;flex-direction:column}.targetSelect label{min-width:0}}
+.predictedCurve{fill:none;stroke:#62d49b;stroke-width:2.2;vector-effect:non-scaling-stroke}.legendPredicted{background:#62d49b}.roomSuggestion tr.peqOff td{color:#50677d}.roomSuggestion tr.peqOff{opacity:.62}
+
+/* v0.3.1 Room EQ measurement accuracy */
+.roomGraphControls{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;justify-content:flex-end}
+.curveModeSwitch{display:flex;border:1px solid var(--line,#284057);border-radius:9px;overflow:hidden;background:rgba(5,18,30,.35)}
+.curveModeSwitch button{border:0;border-right:1px solid var(--line,#284057);background:transparent;color:var(--muted,#8da2b7);padding:9px 12px;font:inherit;cursor:pointer}
+.curveModeSwitch button:last-child{border-right:0}
+.curveModeSwitch button.active{background:rgba(37,132,255,.22);color:var(--text,#eaf4ff)}
+.curveModeSwitch button:disabled{opacity:.35;cursor:not-allowed}
+.graphRange{margin-left:auto;color:var(--muted,#7890a6);font-size:12px;align-self:center}
+@media (max-width:900px){.roomGraphControls{width:100%;justify-content:flex-start}.graphRange{margin-left:0;width:100%}}
+
+/* v0.3.2 Room EQ usability */
+.roomTestVolume{margin-top:13px;padding:11px 12px;border:1px solid #1f3850;border-radius:8px;background:#081522}.roomTestVolumeHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}.roomTestVolumeHead span{font-size:9px;color:#7890a8}.roomTestVolumeHead strong{font-size:11px;color:#dcecff}.roomTestVolume .volumeSliderWrap{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px}.roomTestVolume .sliderValue{min-width:38px;text-align:right;font-size:10px;color:#9fc8eb}.roomVolumeHint{margin-top:7px;font-size:8.5px;line-height:1.45;color:#607b94}.micMeterScale{display:grid;grid-template-columns:repeat(4,1fr);margin-top:4px;font-size:7.5px;color:#5f7890}.micMeterScale span:nth-child(2),.micMeterScale span:nth-child(3){text-align:center}.micMeterScale span:last-child{text-align:right}.micMeterMeaning{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;margin-top:3px;font-size:7.5px;color:#5d748b}.micMeterMeaning span:nth-child(2){text-align:center;color:#6f9d89}.micMeterMeaning span:last-child{text-align:right;color:#9a6c5e}
+
+/* v0.3.4 Player / Internet Radio */
+.radioPresets{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:9px}.radioPreset{position:relative;min-width:0;min-height:76px;padding:12px 8px 9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1px solid #243c55;border-radius:9px;background:#0a1928;color:#dce9f7}.radioPreset:hover:not(:disabled){border-color:#356b98;background:#0d2236}.radioPreset.active{border-color:#168bff;box-shadow:inset 0 0 0 1px rgba(22,139,255,.28)}.radioPreset.empty{opacity:.42;cursor:default}.radioPreset b{max-width:100%;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.presetNo{position:absolute;left:7px;top:6px;font-size:8px;color:#617b95}.radioPreset .radioLogo{width:30px;height:30px;border-radius:7px}.internetRadioPanel{min-height:300px}.radioSearchGrid{display:grid;grid-template-columns:1.2fr .8fr .8fr auto;gap:10px;align-items:end;margin-bottom:14px}.radioSearchGrid label{margin:0}.radioSearchBtn{height:36px;align-self:end;justify-content:center;min-width:105px}.radioSearchBtn:disabled,.miniRefresh:disabled{opacity:.55;cursor:default}.radioSectionHead{display:flex;align-items:center;justify-content:space-between;margin:3px 0 8px}.radioSectionHead b{font-size:11px;color:#cfe0f1}.radioSectionHead span{font-size:9px;color:#6e859d}.radioStationList{display:flex;flex-direction:column;gap:6px;max-height:440px;overflow:auto;padding-right:3px}.radioStation{display:grid;grid-template-columns:46px minmax(0,1fr) 92px 82px 34px 82px;gap:10px;align-items:center;padding:9px 10px;border:1px solid #1f3348;border-radius:8px;background:#091725}.radioStation:hover{border-color:#315675;background:#0a1b2b}.radioStation.active{border-color:#168bff;background:#0c2237;box-shadow:inset 3px 0 0 #168bff}.radioLogo{width:42px;height:42px;border-radius:8px;overflow:hidden;background:#0d2236;border:1px solid #27425e;display:grid;place-items:center;color:#7ea7cb;flex:0 0 auto}.radioLogo img{width:100%;height:100%;object-fit:cover}.radioLogo.fallback{background:#0c1e30}.radioStationInfo{min-width:0;display:flex;flex-direction:column;gap:3px}.radioStationInfo b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.radioStationInfo span{font-size:9px;color:#829ab2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.radioStationInfo small{font-size:8px;color:#5e7891;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.radioTech{display:flex;flex-direction:column;align-items:flex-end;gap:2px}.radioTech span{font-size:8px;font-weight:800;color:#9bc6e9;border:1px solid #2a4c68;border-radius:999px;padding:3px 6px}.radioTech small{font-size:8px;color:#698198}.radioTech .radioWarn{color:#c7a96b}.radioFav{width:32px;height:32px;border-radius:7px;background:#0d1e30;border:1px solid #284159;color:#6885a0;font-size:19px;line-height:1}.radioFav:hover,.radioFav.active{color:#f0c85d;border-color:#755f29;background:#261f0d}.radioPlayBtn{height:34px;border-radius:7px;background:#168bff;color:white;display:flex;align-items:center;justify-content:center;gap:6px;font-size:9px;font-weight:700}.radioPlayBtn:disabled{opacity:.65}.radioError,.radioEmpty{padding:18px;border:1px dashed #2a4157;border-radius:8px;text-align:center;color:#7690a8;font-size:10px}.radioError{color:#e0a5a5;border-color:#633a45;background:#24141a;margin-bottom:8px}.radioFootnote{margin-top:10px;color:#617b94;font-size:8.5px;line-height:1.45}.radioPresets .radioLogo img{width:100%;height:100%;object-fit:cover}@media(max-width:1200px){.radioPresets{grid-template-columns:repeat(3,1fr)}.radioSearchGrid{grid-template-columns:1fr 1fr}.radioSearchBtn{grid-column:2}.radioStation{grid-template-columns:42px minmax(0,1fr) 84px 70px 34px 76px}}@media(max-width:850px){.radioPresets{grid-template-columns:repeat(2,1fr)}.radioSearchGrid{grid-template-columns:1fr}.radioSearchBtn{grid-column:auto}.radioStation{grid-template-columns:42px minmax(0,1fr) 34px 72px}.radioTech{display:none}}
+
+.radioCompat{font-size:8px;font-weight:700;white-space:nowrap;text-align:center;padding:4px 6px;border-radius:999px;border:1px solid #2b4157;color:#71879d;background:#0a1724}.radioCompat.verified{color:#77d8aa;border-color:#285f4b;background:#0c241c}.radioCompat.accepted{color:#e6c776;border-color:#66552c;background:#251f0d}.radioCompat.failed{color:#e59a9a;border-color:#643743;background:#251419}.radioCompat.directory{color:#8eb7d8;border-color:#31516c;background:#0c1d2c}.radioCompat.untested{color:#71879d}.radioLoadMore{margin:10px auto 0;min-width:150px;height:34px;border:1px solid #2b4a65;border-radius:8px;background:#0c1d2d;color:#a9c7e2;display:flex;align-items:center;justify-content:center;gap:7px;font-size:9px;font-weight:700}.radioLoadMore:hover:not(:disabled){border-color:#3f7197;background:#10283d}.radioLoadMore:disabled{opacity:.55}@media(max-width:980px){.radioCompat{display:none}}
+
+.metaBadges.compact{margin-top:5px!important}.metaBadges.compact span{padding:3px 7px!important;font-size:8px!important}
+
+/* v0.4.0 multi-driver device selector */
+.deviceTypePicker{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:4px 0 18px}
+.deviceTypePicker button{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px 16px;border:1px solid #27415b;border-radius:12px;background:#0b1928;color:#dce9f7;cursor:pointer;text-align:left}
+.deviceTypePicker button:hover{border-color:#3d6b93}
+.deviceTypePicker button.selected{border-color:#2e9bff;box-shadow:0 0 0 1px #2e9bff inset;background:#0c2135}
+.deviceTypePicker button b{font-size:15px}
+.deviceTypePicker button span{font-size:12px;color:#829ab2}
+.unsupportedFeature{padding:28px;border:1px dashed #29455f;border-radius:12px;background:#091522}
+.unsupportedFeature h3{margin:0 0 8px;font-size:18px;color:#dce9f7}
+.unsupportedFeature p{margin:0 0 12px;color:#93a9bd;line-height:1.5}
+.unsupportedFeature small{color:#668098}
+
+
+/* v3.0.7 Linkplay A31 EQ */
+.linkplayEqSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}.linkplayEqSummary>div{padding:12px 13px;border:1px solid #213950;border-radius:9px;background:#091725;display:flex;flex-direction:column;gap:4px}.linkplayEqSummary span{font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#68839d}.linkplayEqSummary b{font-size:13px;color:#e4f0fb}.linkplayEqSummary small{font-size:8.5px;line-height:1.4;color:#71889f}.linkplayEqControls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.linkplayEqControl{padding:16px;border:1px solid #213950;border-radius:10px;background:#081522}.linkplayEqControl.balanceControl{grid-column:1/-1}.linkplayEqHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.linkplayEqHead>div{display:flex;flex-direction:column;gap:3px}.linkplayEqHead b{font-size:12px}.linkplayEqHead span{font-size:8.5px;color:#71889f}.linkplayEqHead strong{font-size:13px;color:#a9d7ff}.linkplayEqControl input[type=range]{width:100%}.linkplayEqScale{display:flex;justify-content:space-between;margin-top:5px;font-size:8px;color:#5e7891}.linkplayEqControl .actions{margin-top:12px}.linkplayEqNote{margin-top:14px;padding:12px 14px;border-left:3px solid #2f789f;border-radius:5px;background:#0a1b29;color:#7f99b0;font-size:9px;line-height:1.55}.linkplayEqNote b{color:#b9d9f3}@media(max-width:900px){.linkplayEqSummary,.linkplayEqControls{grid-template-columns:1fr}.linkplayEqControl.balanceControl{grid-column:auto}}
+
+
+/* v3.0.7.2 — precise horizontal slider geometry */
+.range,
+.linkplayEqControl input[type=range]{
+  -webkit-appearance:none;
+  appearance:none;
+  width:100%;
+  height:16px;
+  padding:0;
+  border:0;
+  background:transparent;
+  cursor:pointer;
+}
+.range::-webkit-slider-runnable-track,
+.linkplayEqControl input[type=range]::-webkit-slider-runnable-track{
+  width:100%;
+  height:4px;
+  background:#20364f;
+  border-radius:999px;
+}
+.range::-webkit-slider-thumb,
+.linkplayEqControl input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  appearance:none;
+  width:14px;
+  height:14px;
+  margin-top:-5px;
+  border:0;
+  border-radius:50%;
+  background:#168bff;
+  box-shadow:0 0 0 1px #0b1727,0 2px 7px rgba(0,0,0,.35);
+}
+.range:focus-visible::-webkit-slider-thumb,
+.linkplayEqControl input[type=range]:focus-visible::-webkit-slider-thumb{
+  box-shadow:0 0 0 3px rgba(22,139,255,.24),0 2px 7px rgba(0,0,0,.35);
+}
+.range.huge{height:18px}
+
+
+/* v3.0.7.5 — A31 presets / Virtual Bass / max-volume controls */
+.a31AudioSection{margin-top:14px;padding:14px;border:1px solid #213950;border-radius:10px;background:#081522}.a31SectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.a31SectionHead>div{display:flex;flex-direction:column;gap:3px}.a31SectionHead b{font-size:12px;color:#e4f0fb}.a31SectionHead span{font-size:8.5px;color:#71889f}.a31PresetGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.a31PresetGrid button,.a31ToggleRow button{border:1px solid #29445f;border-radius:8px;background:#0b1a29;color:#9fb5c9;padding:10px 8px;cursor:pointer}.a31PresetGrid button{display:flex;flex-direction:column;gap:3px;align-items:center}.a31PresetGrid button span{font-size:10px;font-weight:700}.a31PresetGrid button small{font-size:8px;color:#607b94}.a31PresetGrid button:hover,.a31ToggleRow button:hover{border-color:#3c709c}.a31PresetGrid button.active,.a31ToggleRow button.active{border-color:#168bff;background:#0c2841;color:#dff1ff;box-shadow:0 0 0 1px rgba(22,139,255,.25) inset}.a31AdvancedGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.a31AdvancedCard{padding:13px;border:1px solid #20384f;border-radius:9px;background:#091725}.a31CardTitle{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.a31CardTitle>div{display:flex;flex-direction:column;gap:3px}.a31CardTitle b{font-size:11px;color:#dfeefa}.a31CardTitle span{font-size:8px;color:#6f889f}.a31CardTitle strong{font-size:12px;color:#9dd2ff}.a31AdvancedCard input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;padding:0;border:0;background:transparent;cursor:pointer}.a31AdvancedCard input[type=range]::-webkit-slider-runnable-track{width:100%;height:4px;background:#20364f;border-radius:999px}.a31AdvancedCard input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;margin-top:-5px;border:0;border-radius:50%;background:#168bff;box-shadow:0 0 0 1px #0b1727,0 2px 7px rgba(0,0,0,.35)}.a31ToggleRow{display:grid;grid-template-columns:1fr 1fr;gap:8px}.a31ToggleRow button{font-size:10px;font-weight:700}@media(max-width:1000px){.a31PresetGrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.a31AdvancedGrid{grid-template-columns:1fr}.a31PresetGrid{grid-template-columns:repeat(2,1fr)}}
+
+.a31WriteOnlyHint{display:block;margin-top:7px;font-size:8px;line-height:1.35;color:#6f889f}
+
+/* v3.0.7.9 — A98/WiiM documented 10-band HTTP equalizer */
+.wiimEqSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}.wiimEqSummary>div{padding:12px 13px;border:1px solid #213950;border-radius:9px;background:#091725;display:flex;flex-direction:column;gap:4px}.wiimEqSummary span{font-size:8px;text-transform:uppercase;letter-spacing:.06em;color:#68839d}.wiimEqSummary b{font-size:13px;color:#e4f0fb}.wiimEqSummary small{font-size:8.5px;line-height:1.4;color:#71889f}.wiimEqSection{margin-top:14px;padding:14px;border:1px solid #213950;border-radius:10px;background:#081522}.wiimPowerButtons{max-width:300px}.wiimEqGraph{height:350px;display:flex;align-items:center;justify-content:space-around;gap:6px;border:1px solid #1f334b;border-radius:8px;padding:20px 12px;background:linear-gradient(180deg,rgba(24,139,255,.04),transparent);overflow-x:auto}.wiimEqBand{height:295px;min-width:62px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px}.wiimEqBand b{height:30px;font-size:8px;font-weight:600;color:#a9c0d8;text-align:center;white-space:nowrap}.wiimEqBand input[type=range]{writing-mode:vertical-lr;direction:rtl;height:205px;accent-color:#168bff;padding:0;border:0}.wiimEqBand span{font-size:9px;color:#7b94ad;white-space:nowrap}.wiimPresetGrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}.wiimPresetGrid button{border:1px solid #29445f;border-radius:8px;background:#0b1a29;color:#9fb5c9;padding:9px 7px;cursor:pointer;min-height:42px}.wiimPresetGrid button span{font-size:9px;font-weight:700}.wiimPresetGrid button:hover{border-color:#3c709c}.wiimPresetGrid button.active{border-color:#168bff;background:#0c2841;color:#dff1ff;box-shadow:0 0 0 1px rgba(22,139,255,.25) inset}@media(max-width:1000px){.wiimPresetGrid{grid-template-columns:repeat(3,1fr)}}@media(max-width:700px){.wiimEqSummary{grid-template-columns:1fr}.wiimPresetGrid{grid-template-columns:repeat(2,1fr)}}
+
+.wiimNativeValue{font-size:7px;color:#526b82;white-space:nowrap}.wiimPeqProbe{margin:10px 0 0;padding:12px;max-height:280px;overflow:auto;border:1px solid #1f334b;border-radius:8px;background:#06111c;color:#9fc0da;font-size:9px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+
+/* v3.0.7.11 — A98/WiiM LV2 Parametric EQ */
+.wiimPeqMeta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0}
+.wiimPeqMeta>div{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);display:flex;flex-direction:column;gap:4px}
+.wiimPeqMeta span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.wiimPeqMeta b{font-size:14px}
+.wiimPeqGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.wiimPeqCard{border:1px solid var(--line);border-radius:14px;padding:12px;background:rgba(255,255,255,.025);display:grid;gap:10px}
+.wiimPeqCardHead{display:flex;justify-content:space-between;gap:12px;align-items:center}.wiimPeqCardHead span{font-size:12px;color:var(--muted)}
+.wiimPeqCard label{display:grid;grid-template-columns:120px minmax(0,1fr);align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.wiimPeqCard input[type="number"],.wiimPeqCard select{width:100%;min-width:0;border:1px solid var(--line);border-radius:9px;background:var(--panel2);color:var(--text);padding:7px 9px}
+.wiimPeqCard label:has(input[type="range"]){grid-template-columns:90px 70px minmax(0,1fr)}
+.wiimPeqCard .ghostBtn{justify-self:end}.wiimPeqRaw{margin-top:12px}.wiimPeqRaw summary{cursor:pointer;color:var(--muted);font-size:12px}
+@media(max-width:900px){.wiimPeqMeta{grid-template-columns:repeat(2,minmax(0,1fr))}.wiimPeqGrid{grid-template-columns:1fr}}
+
+/* v3.0.7.12 — unified A33 / A98 Parametric EQ curve editor */
+.unifiedPeq{margin-top:14px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.018);overflow:hidden}
+.unifiedPeqTitle{padding:14px 16px 8px}.unifiedPeqTitle>div{display:flex;flex-direction:column;gap:4px}.unifiedPeqTitle b{font-size:14px;color:var(--text)}.unifiedPeqTitle span{font-size:11px;color:var(--muted)}
+.peqCurveShell{padding:8px 12px 14px}.peqCurve{display:block;width:100%;height:auto;min-height:285px;touch-action:none;user-select:none}.peqCurveBg{fill:#07111b;stroke:#24384d;stroke-width:1}.peqGridLine{stroke:#1c3044;stroke-width:1}.peqZeroLine{stroke:#7690a9;stroke-width:1.5}.peqAxisText{fill:#7189a1;font-size:10px}.peqResponsePath{fill:none;stroke:#ffd33d;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(255,211,61,.18))}.peqNode{cursor:grab}.peqNode:active{cursor:grabbing}.peqNode circle{fill:#ffb000;stroke:#fff4c0;stroke-width:1.5}.peqNode text{fill:#07111b;font-size:10px;font-weight:800;pointer-events:none}.peqNode.selected circle{fill:#168bff;stroke:#d7eeff;stroke-width:2.5}
+.unifiedPeqTableWrap{overflow:auto;border-top:1px solid var(--line)}.unifiedPeqTable{width:100%;border-collapse:collapse;min-width:720px}.unifiedPeqTable th{padding:9px 10px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#7189a1;background:#081522;position:sticky;top:0}.unifiedPeqTable td{padding:8px 10px;border-top:1px solid rgba(50,75,98,.5);font-size:12px}.unifiedPeqTable tr.selected td{background:rgba(22,139,255,.09)}.unifiedPeqTable select,.unifiedPeqTable input[type=number]{border:1px solid var(--line);border-radius:8px;background:var(--panel2);color:var(--text);padding:7px 8px;min-width:0}.unifiedPeqTable select{width:112px}.peqBandBadge{width:28px;height:28px;border-radius:50%;border:1px solid #55718c;background:#0b1b2a;color:#d7e7f4;font-weight:800;cursor:pointer}.unifiedPeqTable tr.selected .peqBandBadge{background:#168bff;border-color:#8dcbff;color:white}.peqInlineNumber{display:flex;align-items:center;gap:6px}.peqInlineNumber input{width:104px}.peqInlineNumber span{font-size:10px;color:var(--muted)}.peqQInput{width:88px}.peqApplyBand{padding:7px 12px!important;white-space:nowrap}
+@media(max-width:800px){.peqCurve{min-height:220px}.unifiedPeqTitle span{font-size:10px}}
+
+
+/* v3.0.7.15 — airScope hardware visual language + dark/light themes */
+:root{
+  --bg:#000000;--panel:#0a0a0a;--panel2:#111111;--panel3:#181818;
+  --line:#4a4a4a;--line-soft:#2d2d2d;--text:#ffffff;--muted:#a8a8a8;--muted2:#777777;
+  --active:#ffffff;--active-bg:#1b1b1b;--ok:#39d98a;--bad:#ff4d5f;
+}
+:root[data-theme="light"]{
+  --bg:#ffffff;--panel:#fafafa;--panel2:#f2f2f2;--panel3:#e9e9e9;
+  --line:#9a9a9a;--line-soft:#d1d1d1;--text:#111111;--muted:#5f5f5f;--muted2:#858585;
+  --active:#000000;--active-bg:#e6e6e6;
+}
+body{background:var(--bg);color:var(--text)}
+.app,.app[data-theme]{background:var(--bg);color:var(--text)}
+.topbar,.sidebar{background:var(--panel);border-color:var(--line-soft)}
+.deviceColumn{border-color:var(--line-soft);background:var(--bg)}
+.workspace{background:var(--bg)}
+.brandIcon{border-color:var(--text);color:var(--text);border-radius:4px}
+.brandSub,.heroMeta,.panelTitle p,.trackInfo span,.trackInfo small,.time,.metric span,.metric small,.feature span,
+.formGrid label,label,.source span,.volumeBig span,.sideBottom,.sideBottom small,.deviceInfo span,.heroStatus,.a31SectionHead span,
+.a31CardTitle span,.a31WriteOnlyHint,.linkplayEqHead span,.linkplayEqScale,.linkplayEqNote,.wiimEqSummary span,.wiimEqSummary small,
+.wiimNativeValue,.wiimPeqRaw summary{color:var(--muted)}
+.segmented,.themeSwitch{border:1px solid var(--line);background:var(--panel2);border-radius:3px;padding:2px;display:flex}
+.segmented button,.themeSwitch button{background:transparent;padding:8px 14px;border-radius:2px;color:var(--muted);font-size:12px}
+.segmented .active,.themeSwitch .active{background:var(--active-bg);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.divider{background:var(--line-soft)}
+.iconBtn{color:var(--muted);border-radius:3px}.iconBtn:hover{background:var(--panel2);color:var(--text)}
+.sideItem{color:var(--muted);border-radius:3px}.sideItem:hover,.sideItem.selected{background:var(--panel2);color:var(--text)}
+.sideItem.selected{box-shadow:inset 2px 0 var(--text)}
+.primaryBtn,.ghostBtn,.dangerBtn,.wideBtn,.volumeActions button{border-radius:3px;box-shadow:none}
+.primaryBtn{background:var(--text);color:var(--bg);border:1px solid var(--text)}.primaryBtn:hover{opacity:.84;background:var(--text)}
+.ghostBtn,.wideBtn,.volumeActions button{border-color:var(--line);background:var(--panel2);color:var(--text)}
+.dangerBtn{background:var(--panel2);border-color:var(--bad);color:var(--bad)}
+.search,.formGrid input,.formGrid select,input,select{background:var(--panel2);border-color:var(--line);color:var(--text);border-radius:3px}
+.search input{color:var(--text)}
+.deviceCard,.panel,.feature,.source,.deviceHero,.linkplayEqControl,.a31AudioSection,.a31AdvancedCard,.wiimEqSection,
+.wiimEqSummary>div,.linkplayEqSummary>div,.unsupportedFeature{background:var(--panel);border-color:var(--line-soft);border-radius:4px;box-shadow:none}
+.deviceCard:hover,.feature:hover,.source:hover{border-color:var(--line)}
+.deviceCard.selected,.source.selected{background:var(--panel2);border-color:var(--text);box-shadow:inset 2px 0 var(--text)}
+.deviceInfo strong,.panelTitle h2,.a31SectionHead b,.a31CardTitle b,.wiimEqSummary b,.linkplayEqSummary b{color:var(--text)}
+.deviceThumb,.heroDevice,.albumArt{background:var(--panel3);color:var(--muted);border-radius:3px}
+.heroStates{border-color:var(--line-soft);border-radius:3px}.heroStates>div{border-color:var(--line-soft)}.heroStates svg{color:var(--muted)}
+.tabs{border-color:var(--line-soft)}.tabs button{color:var(--muted)}.tabs button.active{color:var(--text);border-bottom-color:var(--text)}
+.eqTabs button{background:var(--panel2);border-color:var(--line);color:var(--muted);border-radius:3px}.eqTabs .active{background:var(--active-bg);border-color:var(--text);color:var(--text)}
+.quickGrid button{background:var(--panel2);border-color:var(--line-soft);color:var(--text);border-radius:3px}.quickGrid button:hover{border-color:var(--line)}
+.feature>svg{background:var(--panel2);color:var(--text);border-radius:3px}
+.progress,.range::-webkit-slider-runnable-track,.linkplayEqControl input[type=range]::-webkit-slider-runnable-track,.a31AdvancedCard input[type=range]::-webkit-slider-runnable-track{background:var(--line-soft)}
+.progress span{background:var(--text)}
+.range::-webkit-slider-thumb,.linkplayEqControl input[type=range]::-webkit-slider-thumb,.a31AdvancedCard input[type=range]::-webkit-slider-thumb{background:var(--text);box-shadow:0 0 0 1px var(--bg)}
+.a31PresetGrid button,.a31ToggleRow button,.wiimPresetGrid button{background:var(--panel2);border-color:var(--line);color:var(--muted);border-radius:3px}
+.a31PresetGrid button.active,.a31ToggleRow button.active,.wiimPresetGrid button.active{background:var(--active-bg);border-color:var(--text);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+.wiimEqGraph,.eqGraph{background:var(--panel);border-color:var(--line-soft);border-radius:3px}
+.unifiedPeq{background:var(--panel);border-color:var(--line);border-radius:4px}
+.peqCurveBg{fill:var(--bg);stroke:var(--line)}.peqGridLine{stroke:var(--line-soft)}.peqZeroLine{stroke:var(--muted)}.peqAxisText{fill:var(--muted)}
+/* Keep PEQ response and handles yellow/orange in both themes. */
+.peqResponsePath{stroke:#ffd33d}.peqNode circle{fill:#ff9f0a;stroke:#fff0b0}.peqNode text{fill:#111}.peqNode.selected circle{fill:#ff9f0a;stroke:#ffffff;stroke-width:2.5}
+.unifiedPeqTableWrap{border-color:var(--line)}.unifiedPeqTable th{background:var(--panel2);color:var(--muted)}.unifiedPeqTable td{border-color:var(--line-soft)}
+.unifiedPeqTable tr.selected td{background:var(--active-bg)}.unifiedPeqTable select,.unifiedPeqTable input[type=number]{background:var(--panel2);border-color:var(--line);color:var(--text);border-radius:3px}
+.peqBandBadge{background:var(--panel2);border-color:var(--line);color:var(--text)}.unifiedPeqTable tr.selected .peqBandBadge{background:#ff9f0a;border-color:#ffd33d;color:#111}
+.onlineDot,.status.online i{background:var(--ok);box-shadow:0 0 7px color-mix(in srgb,var(--ok) 65%,transparent)}.status.online,.heroStates span,.metric em{color:var(--ok)}
+.offlineDot,.status.offline i{background:var(--bad)}
+@media(max-width:900px){.themeSwitch button{padding:7px 9px}.topActions{gap:7px}}
+
+/* v3.0.7.16 — complete theme cleanup: remove legacy blue surfaces */
+:root{
+  --surface-raised:var(--panel2);
+  --surface-strong:var(--panel3);
+  --control-bg:var(--panel2);
+  --control-hover:var(--panel3);
+  --focus-ring:var(--text);
+}
+
+/* Global legacy surfaces */
+.panel,.deviceHero,.networkStatus,.multiHero,.trackList button,.infoGrid div,.modal,
+.eqModeBar,.toneReadout>div,.toneControl,.peqTableWrap,.roomPanel,.roomTestVolume,
+.radioPreset,.internetRadioPanel,.radioStation,.radioLogo,.radioCompat,.radioLoadMore,
+.deviceTypePicker button,.unsupportedFeature,.linkplayEqNote,.wiimPeqProbe,
+.wiimPeqMeta>div,.wiimPeqCard,.curveModeSwitch{
+  background:var(--panel)!important;
+  border-color:var(--line-soft)!important;
+  color:var(--text);
+  box-shadow:none!important;
+}
+
+/* Raised/control surfaces */
+.eqModeBar,.roomPanel,.roomTestVolume,.toneReadout>div,.toneControl,
+.linkplayEqControl,.a31AudioSection,.a31AdvancedCard,.wiimEqSection,
+.linkplayEqSummary>div,.wiimEqSummary>div,.wiimPeqMeta>div,.wiimPeqCard,
+.radioPreset,.radioStation,.radioLogo,.radioCompat,.radioLoadMore,
+.trackList button,.infoGrid div,.deviceTypePicker button,.unsupportedFeature,
+.modal,.miniRefresh,.toast,.apiChip,.console{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+}
+
+/* Remove legacy blue gradients and tints */
+.deviceHero,.panel,.eqGraph,.wiimEqGraph{
+  background:var(--panel)!important;
+}
+.eqGraph,.wiimEqGraph,.roomGraph,.roomGraph svg,.roomGraphWrap{
+  border-color:var(--line-soft)!important;
+}
+
+/* Main text / secondary text */
+.playerBig p,.eqScaleNote,.toneReadout span,.toneReadout small,.toneReadout p,
+.peqTable th,.peqTable td:first-child,.peqNumber span,.peqGain span,
+.roomPanel p,.roomPanel small,.roomTestVolumeHead span,.roomVolumeHint,
+.micMeterScale,.micMeterMeaning,.radioSectionHead span,.radioStationInfo span,
+.radioStationInfo small,.radioTech small,.radioFootnote,.radioCompat,
+.deviceTypePicker button span,.unsupportedFeature p,.unsupportedFeature small,
+.linkplayEqSummary span,.linkplayEqSummary small,.linkplayEqHead span,.linkplayEqScale,
+.linkplayEqNote,.a31SectionHead span,.a31PresetGrid button small,.a31CardTitle span,
+.a31WriteOnlyHint,.wiimEqSummary span,.wiimEqSummary small,.wiimEqBand span,
+.wiimNativeValue,.wiimPeqProbe,.wiimPeqMeta span,.wiimPeqCardHead span{
+  color:var(--muted)!important;
+}
+
+/* Buttons and tabs become monochrome hardware controls */
+.miniRefresh,.toggle,.radioPlayBtn,.radioLoadMore,.deviceTypePicker button,
+.curveModeSwitch button,.signalChoices button,.roomGraphControls button{
+  background:var(--control-bg)!important;
+  border:1px solid var(--line)!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+  border-radius:3px!important;
+}
+.miniRefresh:hover,.radioLoadMore:hover:not(:disabled),.deviceTypePicker button:hover,
+.curveModeSwitch button:hover,.signalChoices button:hover,.roomGraphControls button:hover{
+  background:var(--control-hover)!important;
+  border-color:var(--text)!important;
+}
+.curveModeSwitch button.active,.signalChoices button.active,.deviceTypePicker button.selected,
+.roomGraphControls button.active{
+  background:var(--active-bg)!important;
+  border-color:var(--text)!important;
+  color:var(--text)!important;
+  box-shadow:inset 0 0 0 1px var(--line)!important;
+}
+
+/* Player transport: no blue decorative button */
+.transport button{color:var(--text)!important}
+.transport .play{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+}
+
+/* Progress / ordinary sliders are grayscale. PEQ keeps its own yellow/orange treatment. */
+.progress{background:var(--line-soft)!important}.progress span{background:var(--text)!important}
+.range,.eqBand input,.wiimEqBand input[type=range],.peqGain input[type=range],
+.toneControl input[type=range]{accent-color:var(--text)!important}
+.range::-webkit-slider-runnable-track,
+.linkplayEqControl input[type=range]::-webkit-slider-runnable-track,
+.a31AdvancedCard input[type=range]::-webkit-slider-runnable-track{
+  background:var(--line)!important;
+}
+.range::-webkit-slider-thumb,
+.linkplayEqControl input[type=range]::-webkit-slider-thumb,
+.a31AdvancedCard input[type=range]::-webkit-slider-thumb{
+  background:var(--text)!important;
+  box-shadow:0 0 0 1px var(--bg)!important;
+}
+.range:focus-visible::-webkit-slider-thumb,
+.linkplayEqControl input[type=range]:focus-visible::-webkit-slider-thumb{
+  box-shadow:0 0 0 2px var(--line),0 0 0 4px var(--bg)!important;
+}
+
+/* EQ legacy mode/status area */
+.eqModeBar{border-radius:4px!important}
+.eqStatusPills span{
+  color:var(--muted)!important;
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+}
+.eqMessage{
+  color:var(--text)!important;
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+}
+.eqScaleNote code,.toneReadout code,.linkplayEqHead strong,.a31CardTitle strong{
+  color:var(--text)!important;
+}
+
+/* Graphic EQ panels */
+.eqGraph,.wiimEqGraph{
+  border-color:var(--line)!important;
+  background:var(--panel)!important;
+}
+.eqBand span,.eqBand b,.wiimEqBand b{color:var(--muted)!important}
+
+/* Room EQ: neutral black/white hardware framing, gray grid */
+.roomPanel,.roomTestVolume{border-radius:4px!important}
+.roomSectionTitle,.roomPanel h3,.roomPanel h4{color:var(--text)!important}
+.roomGraph{background:var(--bg)!important;border-color:var(--line)!important}
+.roomGridLine,.roomGrid line,.roomGraph .gridLine{stroke:var(--line-soft)!important}
+.roomAxisText,.roomGraph text{fill:var(--muted)!important}
+.curveModeSwitch{background:var(--panel2)!important;border-color:var(--line)!important;border-radius:3px!important}
+.curveModeSwitch button{border-right-color:var(--line)!important}
+.graphRange{color:var(--muted)!important}
+.roomTestVolume .sliderValue{color:var(--text)!important}
+
+/* Internet radio / presets */
+.radioPreset{color:var(--text)!important;border-radius:4px!important}
+.radioPreset:hover:not(:disabled),.radioStation:hover{
+  background:var(--panel3)!important;
+  border-color:var(--line)!important;
+}
+.radioPreset.active,.radioStation.active{
+  background:var(--active-bg)!important;
+  border-color:var(--text)!important;
+  box-shadow:inset 2px 0 0 var(--text)!important;
+}
+.radioLogo,.radioLogo.fallback{background:var(--panel3)!important;border-color:var(--line)!important;color:var(--muted)!important}
+.radioStationInfo b,.radioSectionHead b{color:var(--text)!important}
+.radioTech span{
+  color:var(--muted)!important;
+  border-color:var(--line)!important;
+  background:var(--panel2)!important;
+}
+.radioFav{background:var(--panel2)!important;border-color:var(--line)!important;color:var(--muted)!important;border-radius:3px!important}
+.radioFav:hover,.radioFav.active{color:#ffcc55!important;border-color:#8b6d21!important;background:var(--panel3)!important}
+.radioPlayBtn{background:var(--text)!important;color:var(--bg)!important;border-color:var(--text)!important}
+.radioCompat.directory,.radioCompat.untested{color:var(--muted)!important;background:var(--panel2)!important;border-color:var(--line)!important}
+.radioError{background:color-mix(in srgb,var(--bad) 10%,var(--panel))!important;border-color:var(--bad)!important;color:var(--bad)!important}
+
+/* Keep semantic status colors only */
+.liveBadge{color:var(--ok)!important;border-color:color-mix(in srgb,var(--ok) 38%,transparent)!important;background:color-mix(in srgb,var(--ok) 8%,transparent)!important}
+.liveBadge.demo{color:var(--muted)!important;border-color:var(--line)!important;background:var(--panel2)!important}
+.radioCompat.verified{color:var(--ok)!important;border-color:color-mix(in srgb,var(--ok) 45%,var(--line))!important;background:var(--panel2)!important}
+.radioCompat.failed{color:var(--bad)!important;border-color:color-mix(in srgb,var(--bad) 45%,var(--line))!important;background:var(--panel2)!important}
+.radioCompat.accepted{color:var(--muted)!important;border-color:var(--line)!important;background:var(--panel2)!important}
+
+/* System / console surfaces */
+.footer{background:var(--panel)!important;border-color:var(--line-soft)!important;color:var(--muted)!important}
+.footer b{color:var(--muted2)!important}
+.console{background:var(--panel)!important;color:var(--text)!important}
+.apiChip{background:var(--panel2)!important}.apiChip span{color:var(--muted)!important}.apiChip code{color:var(--text)!important}
+.rawDetails{border-color:var(--line-soft)!important}.rawDetails summary,.helperText{color:var(--muted)!important}
+.toast{color:var(--text)!important}
+.modalBackdrop{background:rgba(0,0,0,.74)}
+
+/* A31 / A98 cards: neutralize remaining blue values */
+.a31PresetGrid button:hover,.a31ToggleRow button:hover,.wiimPresetGrid button:hover{border-color:var(--text)!important}
+.a31PresetGrid button.active,.a31ToggleRow button.active,.wiimPresetGrid button.active{
+  background:var(--active-bg)!important;border-color:var(--text)!important;color:var(--text)!important;box-shadow:none!important
+}
+.linkplayEqNote{border-left-color:var(--line)!important}
+.wiimPeqProbe{color:var(--muted)!important}
+
+/* Light theme: modal overlay and image placeholders stay neutral */
+:root[data-theme="light"] .modalBackdrop{background:rgba(0,0,0,.38)}
+:root[data-theme="light"] .console{background:#f7f7f7!important}
+
+/* PEQ is deliberately unchanged: yellow curve + orange handles. */
+.peqResponsePath{stroke:#ffd33d!important}
+.peqNode circle{fill:#ff9f0a!important;stroke:#fff0b0!important}
+.peqNode.selected circle{fill:#ff9f0a!important;stroke:#ffffff!important}
+
+/* v3.0.7.17 — final neutral-surface cleanup for Room EQ + USB */
+/* Dark/light theme contract: decorative surfaces are neutral; color is reserved for status and PEQ. */
+
+/* Room EQ: remove remaining legacy navy surfaces and blue accents. */
+.roomEqIntro,
+.roomCard,
+.roomTestVolume,
+.micMeter,
+.roomSuggestion,
+.roomEmpty,
+.roomStatus,
+.roomWarning{
+  background:var(--panel)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+}
+.roomEqIntro,.roomCard,.roomSuggestion,.roomEmpty,.roomStatus{border-radius:4px!important}
+.roomEqIntro span,.roomSmall,.roomGraphHead span,.graphLegend,.roomEmpty,
+.roomStatus,.roomVolumeHint,.micMeterScale,.micMeterMeaning{
+  color:var(--muted)!important;
+}
+.roomEqBadge{
+  background:var(--panel2)!important;
+  border:1px solid var(--line)!important;
+  color:var(--text)!important;
+  border-radius:3px!important;
+}
+.signalChoices button{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--muted)!important;
+  border-radius:3px!important;
+  box-shadow:none!important;
+}
+.signalChoices button:hover{background:var(--panel3)!important;border-color:var(--text)!important;color:var(--text)!important}
+.signalChoices button.active{
+  background:var(--active-bg)!important;
+  border-color:var(--text)!important;
+  color:var(--text)!important;
+  box-shadow:inset 0 0 0 1px var(--line)!important;
+}
+.micMeter{background:var(--panel2)!important;border-radius:3px!important}
+.micMeterFill{background:var(--muted2)!important}
+.micMeterFill.good{background:var(--ok)!important}
+.micMeterFill.hot{background:var(--bad)!important}
+.micMeter span{color:var(--text)!important;text-shadow:none!important}
+.roomGraph{
+  background:var(--bg)!important;
+  border-color:var(--line)!important;
+  border-radius:3px!important;
+}
+.gridLine{stroke:var(--line-soft)!important}
+.roomGraph text{fill:var(--muted)!important}
+.measureCurve{stroke:var(--text)!important}
+.targetCurve{stroke:var(--muted)!important}
+.predictedCurve{stroke:var(--muted2)!important}
+.legendMeasure{background:var(--text)!important}
+.legendTarget{border-top-color:var(--muted)!important}
+.legendPredicted{background:var(--muted2)!important}
+.roomSuggestion th{
+  background:var(--panel2)!important;
+  color:var(--muted)!important;
+}
+.roomSuggestion th,.roomSuggestion td{border-color:var(--line-soft)!important}
+.roomSuggestion tr.peqOff td{color:var(--muted2)!important}
+.roomWarning{
+  border-left:3px solid var(--line)!important;
+  color:var(--muted)!important;
+}
+.roomWarning b{color:var(--text)!important}
+
+/* USB page: neutral hardware-style cards, controls and progress. */
+.usbDiskIcon,
+.usbTransport button,
+.usbTrack,
+.usbTrackNo,
+.usbPlaying,
+.usbEmpty,
+.usbError{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+}
+.usbDiskIcon{border-radius:3px!important;color:var(--muted)!important}
+.usbNowMeta>span,.usbNowMeta small,.usbStatusLine,.usbTime,
+.usbTrackText small,.usbTrackDeviceIndex{color:var(--muted)!important}
+.usbDot{background:var(--muted2)!important;box-shadow:none!important}
+.usbDot.ready{background:var(--ok)!important;box-shadow:0 0 7px color-mix(in srgb,var(--ok) 65%,transparent)!important}
+.usbTransport button{
+  border-radius:50%!important;
+  color:var(--text)!important;
+}
+.usbTransport button:hover{background:var(--panel3)!important;border-color:var(--text)!important;color:var(--text)!important}
+.usbTransport .usbPlay{
+  background:var(--text)!important;
+  border-color:var(--text)!important;
+  color:var(--bg)!important;
+}
+.usbProgress{background:var(--line-soft)!important}
+.usbProgress>div{background:var(--text)!important}
+.usbTrack{border-radius:3px!important}
+.usbTrack:hover{background:var(--panel3)!important;border-color:var(--line)!important}
+.usbTrack.active{
+  background:var(--active-bg)!important;
+  border-color:var(--text)!important;
+  box-shadow:inset 2px 0 0 var(--text)!important;
+}
+.usbTrackNo{border-radius:2px!important;color:var(--muted)!important}
+.usbPlaying{
+  color:var(--ok)!important;
+  border-color:color-mix(in srgb,var(--ok) 45%,var(--line))!important;
+  border-radius:3px!important;
+}
+.usbEmpty{border-style:dashed!important;color:var(--muted)!important}
+.usbError{
+  color:var(--bad)!important;
+  border-color:var(--bad)!important;
+  background:color-mix(in srgb,var(--bad) 8%,var(--panel))!important;
+}
+
+/* Native form controls inside Room EQ / USB inherit the same theme surfaces. */
+.roomEq select,.roomEq input[type="number"],.roomEq input[type="text"],
+.usbPage select,.usbPage input[type="number"],.usbPage input[type="text"]{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+}
+
+/* Light theme keeps the same hierarchy with white/gray surfaces. */
+:root[data-theme="light"] .roomGraph{background:#ffffff!important}
+:root[data-theme="light"] .usbTransport .usbPlay{background:#111111!important;color:#ffffff!important;border-color:#111111!important}
+
+/* v3.0.7.18 — orange hardware accents for transport, measurement graph and sliders */
+:root{
+  --accent-orange:#ff9f0a;
+  --accent-yellow:#ffd33d;
+}
+
+/* Playback controls: fully neutral surfaces, no blue/navy accents. */
+.transport button,
+.transport .play,
+.usbTransport button,
+.usbTransport .usbPlay{
+  background:var(--panel2)!important;
+  border:1px solid var(--line)!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+}
+.transport button:hover,
+.transport .play:hover,
+.usbTransport button:hover,
+.usbTransport .usbPlay:hover{
+  background:var(--panel3)!important;
+  border-color:var(--text)!important;
+  color:var(--text)!important;
+}
+:root[data-theme="light"] .transport button,
+:root[data-theme="light"] .transport .play,
+:root[data-theme="light"] .usbTransport button,
+:root[data-theme="light"] .usbTransport .usbPlay{
+  background:var(--panel2)!important;
+  color:var(--text)!important;
+  border-color:var(--line)!important;
+}
+
+/* Room EQ: keep measured response white; predicted / second response line uses PEQ orange. */
+.measureCurve{stroke:var(--text)!important}
+.predictedCurve{stroke:var(--accent-orange)!important}
+.legendMeasure{background:var(--text)!important}
+.legendPredicted{background:var(--accent-orange)!important}
+
+/* All regulation sliders use the PEQ orange accent in both themes. */
+input[type="range"],
+.range,
+.wiimEqBand input[type=range],
+.linkplayEqControl input[type=range],
+.a31AdvancedCard input[type=range]{
+  accent-color:var(--accent-orange)!important;
+}
+
+.range::-webkit-slider-thumb,
+.seekRange::-webkit-slider-thumb,
+.linkplayEqControl input[type=range]::-webkit-slider-thumb,
+.a31AdvancedCard input[type=range]::-webkit-slider-thumb,
+.wiimEqBand input[type=range]::-webkit-slider-thumb,
+.roomEq input[type=range]::-webkit-slider-thumb{
+  background:var(--accent-orange)!important;
+  border-color:var(--accent-orange)!important;
+  box-shadow:0 0 0 1px var(--bg)!important;
+}
+.range::-moz-range-thumb,
+.seekRange::-moz-range-thumb,
+.linkplayEqControl input[type=range]::-moz-range-thumb,
+.a31AdvancedCard input[type=range]::-moz-range-thumb,
+.wiimEqBand input[type=range]::-moz-range-thumb,
+.roomEq input[type=range]::-moz-range-thumb{
+  background:var(--accent-orange)!important;
+  border-color:var(--accent-orange)!important;
+}
+
+/* Playback position/progress follows the same orange accent. */
+.progress span,
+.usbProgress>div{
+  background:var(--accent-orange)!important;
+}
+
+/* Native range tracks stay neutral; browser accent paints the active portion orange. */
+.range::-webkit-slider-runnable-track,
+.linkplayEqControl input[type=range]::-webkit-slider-runnable-track,
+.a31AdvancedCard input[type=range]::-webkit-slider-runnable-track{
+  background:var(--line-soft)!important;
+}
+
+
+/* v3.0.7.19 — airControl branding + final blue cleanup in Player */
+.brandText{display:flex;flex-direction:column;line-height:1.08}
+.brandCredit{font-size:9px;color:var(--muted2);margin-top:3px;letter-spacing:.02em}
+
+/* Player artwork placeholder and metadata badges must never use legacy blue. */
+.albumArt,
+.nowPlayingHero .albumArt.big{
+  background:var(--panel3)!important;
+  border-color:var(--line)!important;
+  color:var(--muted)!important;
+  box-shadow:none!important;
+}
+.nowPlayingEyebrow{color:var(--muted)!important}
+.nowPlayingEyebrow span,
+.metaBadges span{
+  color:var(--text)!important;
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+}
+.trackInfo>span,
+.trackInfo>small,
+.nowPlayingHero .trackInfo>span,
+.nowPlayingHero .trackInfo>small{
+  color:var(--muted)!important;
+}
+
+/* Remove remaining decorative navy from player/quick-presets/source surfaces. */
+.quickGrid button,
+.source,
+.trackList button,
+.feature,
+.networkStatus,
+.multiHero{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+}
+.quickGrid button:hover,
+.source:hover,
+.trackList button:hover,
+.feature:hover{
+  background:var(--panel3)!important;
+  border-color:var(--text)!important;
+}
+.quickGrid small,
+.source span,
+.networkStatus span,
+.multiHero span{color:var(--muted)!important}
+.source svg,.networkStatus>svg,.multiHero>svg{color:var(--muted)!important}
+
+/* No blue selection accent in the visible player/source controls. */
+.source.selected{
+  background:var(--active-bg)!important;
+  border-color:var(--accent-orange)!important;
+  box-shadow:inset 2px 0 0 var(--accent-orange)!important;
+}
+
+/* Keep playback controls neutral while transport position remains orange. */
+.nowPlayingBig .transport button,
+.nowPlayingBig .transport .play{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+}
+.nowPlayingBig .transport button:hover,
+.nowPlayingBig .transport .play:hover{
+  background:var(--panel3)!important;
+  border-color:var(--accent-orange)!important;
+}
+
+
+/* v3.0.7.20 — fixed selected-device header */
+.deviceHeaderSticky{
+  position:sticky;
+  top:0;
+  z-index:60;
+  background:var(--bg);
+  padding-bottom:10px;
+}
+.deviceHeaderSticky .deviceHero{
+  border-radius:4px 4px 0 0!important;
+  border-bottom:0!important;
+}
+.deviceHeaderSticky .tabs{
+  height:55px;
+  align-items:end;
+  padding:0 8px;
+  background:var(--panel);
+  border:1px solid var(--line-soft);
+  border-top:1px solid var(--line-soft);
+  border-radius:0 0 4px 4px;
+}
+.deviceHeaderSticky .tabs button{
+  height:44px;
+}
+/* subtle separator/shadow so scrolling content is visually behind the fixed block */
+.deviceHeaderSticky::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;bottom:3px;height:1px;
+  background:var(--line-soft);
+  pointer-events:none;
+}
+
+/* v3.0.7.21 — seal the sticky device header so scrolled content never shows through */
+.deviceHeaderSticky{
+  padding-bottom:0!important;
+  margin-bottom:12px;
+  isolation:isolate;
+}
+.deviceHeaderSticky::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:-12px;
+  height:12px;
+  background:var(--bg)!important;
+  border-top:1px solid var(--line-soft);
+  z-index:2;
+  pointer-events:none;
+}
+
+/* v3.0.7.22 — sealed sticky header, clearer typography, Playback settings inside Player */
+.workspace{
+  padding-top:0!important;
+}
+.deviceHeaderSticky{
+  top:0!important;
+  margin-bottom:12px!important;
+  padding-top:10px!important;
+  background:var(--bg)!important;
+  z-index:100!important;
+}
+.deviceHeaderSticky::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;height:10px;
+  background:var(--bg);
+  z-index:0;
+  pointer-events:none;
+}
+.deviceHeaderSticky .deviceHero,
+.deviceHeaderSticky .tabs{
+  position:relative;
+  z-index:1;
+}
+.deviceHeaderSticky::after{
+  bottom:-12px!important;
+  height:12px!important;
+  background:var(--bg)!important;
+  border-top:1px solid var(--line-soft)!important;
+  z-index:3!important;
+}
+
+/* More readable type without changing the hardware-panel character. */
+body,.app{font-weight:450;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.brandName{font-weight:750}
+.brandSub{font-size:12px!important;font-weight:550;color:var(--muted)!important}
+.brandCredit{font-size:10px!important;font-weight:550;color:var(--muted)!important}
+.deviceInfo strong{font-size:14px!important;font-weight:750}
+.deviceInfo span{font-size:11px!important;font-weight:520;line-height:1.25}
+.heroTitle{font-weight:750}
+.heroMeta,.heroStatus{font-size:12px!important;font-weight:520}
+.tabs button{font-size:13px!important;font-weight:560}
+.panelTitle h2{font-size:16px!important;font-weight:750}
+.panelTitle p{font-size:11px!important;font-weight:520;line-height:1.35;color:var(--muted)!important}
+label,.formGrid label{font-size:12px!important;font-weight:560;color:var(--muted)!important}
+button,input,select{font-weight:540}
+small{line-height:1.35}
+
+/* Playback settings are part of the Player card now. */
+.playerPlaybackSettings{
+  margin-top:18px;
+  padding-top:16px;
+  border-top:1px solid var(--line-soft);
+}
+.playerPlaybackSettingsTitle{
+  margin-bottom:10px;
+  font-size:13px;
+  font-weight:750;
+  color:var(--text);
+}
+.playerPlaybackSettingsGrid{
+  display:grid;
+  grid-template-columns:minmax(210px,1fr) minmax(180px,1fr) minmax(240px,1.15fr);
+  gap:14px;
+  align-items:end;
+}
+.playerPlaybackSettingsGrid label{margin:0}
+.playerPlaybackSettingsGrid .volumeSliderWrap{min-height:37px;align-content:center}
+@media(max-width:980px){
+  .playerPlaybackSettingsGrid{grid-template-columns:1fr 1fr}
+  .playerPlaybackSettingsGrid label:last-child{grid-column:1/-1}
+}
+
+
+/* v3.0.7.23 — selected-zone master volume in the global top bar */
+.zoneVolumeControl{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  min-width:260px;
+}
+.zoneMuteBtn{
+  height:34px;
+  min-width:62px;
+  padding:0 11px;
+  border:1px solid var(--line);
+  border-radius:3px;
+  background:var(--panel2);
+  color:var(--text);
+  font-size:12px;
+  font-weight:650;
+  white-space:nowrap;
+}
+.zoneMuteBtn:hover{border-color:var(--accent);}
+.zoneMuteBtn.muted{
+  border-color:var(--danger);
+  color:var(--danger);
+}
+.zoneVolumeControl .volumeSliderWrap{
+  display:grid;
+  grid-template-columns:minmax(105px,170px) 42px;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+.zoneVolumeControl .zoneVolumeRange{
+  width:100%;
+  min-width:105px;
+  margin:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  accent-color:var(--accent);
+}
+.zoneVolumeControl .sliderValue{
+  min-width:38px;
+  text-align:right;
+  color:var(--text);
+  font-size:12px;
+  font-weight:700;
+}
+/* Playback settings now contains only loop mode + channel. */
+.playerPlaybackSettingsGrid{
+  grid-template-columns:minmax(210px,1fr) minmax(180px,1fr)!important;
+}
+@media(max-width:1180px){
+  .zoneVolumeControl{min-width:210px;gap:6px}
+  .zoneVolumeControl .volumeSliderWrap{grid-template-columns:minmax(80px,120px) 38px}
+  .zoneMuteBtn{min-width:56px;padding:0 8px}
+}
+@media(max-width:980px){
+  .topbar{padding-left:12px;padding-right:12px}
+  .zoneVolumeControl{min-width:175px}
+  .zoneVolumeControl .volumeSliderWrap{grid-template-columns:minmax(70px,90px) 36px}
+  .playerPlaybackSettingsGrid{grid-template-columns:1fr!important}
+}
+
+
+/* v3.0.7.26 — Windows layout polish / DPI-friendly responsive desktop layout */
+html,body,#root,.app{max-width:100%;overflow-x:hidden}
+.workspace{overflow-y:auto!important;overflow-x:hidden!important}
+.content{overflow:hidden}
+
+/* Keep native Chromium scrollbars discreet and consistent with the theme. */
+*::-webkit-scrollbar{width:9px;height:9px}
+*::-webkit-scrollbar-track{background:var(--bg)}
+*::-webkit-scrollbar-thumb{background:var(--line);border:2px solid var(--bg);border-radius:8px}
+*::-webkit-scrollbar-thumb:hover{background:var(--muted)}
+.tabs::-webkit-scrollbar{height:0}
+.tabs{scrollbar-width:none}
+
+/* Windows commonly runs at 125–150% display scaling. Compress the fixed columns
+   before allowing the workspace to become horizontally cramped. */
+@media(max-width:1400px){
+  .sidebar{width:178px;padding-left:8px;padding-right:8px}
+  .sideItem{gap:10px;padding-left:10px;padding-right:10px;font-size:13px}
+  .deviceColumn{width:270px;padding-left:10px;padding-right:10px}
+  .workspace{padding-left:14px;padding-right:14px}
+  .deviceHero{height:126px;padding:14px;gap:12px}
+  .heroDevice{width:82px;height:82px;flex:0 0 82px}
+  .heroInfo{min-width:0;flex:1}
+  .heroTitle{font-size:20px}
+  .heroMeta{white-space:normal}
+  .heroStates{height:66px;flex:0 0 auto}
+  .heroStates>div{min-width:92px;padding:9px 10px;grid-template-columns:18px 1fr;column-gap:5px}
+  .tabs{gap:0;padding-left:4px!important;padding-right:4px!important}
+  .tabs button{padding-left:9px!important;padding-right:9px!important;font-size:12px!important}
+  .sourceGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .topPanels{grid-template-columns:1fr}
+}
+
+@media(max-width:1220px){
+  .sidebar{width:154px}
+  .sideItem{font-size:12px;gap:8px;padding:10px 8px}
+  .deviceColumn{width:238px}
+  .deviceCard{padding:9px 8px}
+  .deviceThumb{width:48px;height:44px}
+  .deviceInfo strong{font-size:13px!important}
+  .deviceInfo span{font-size:10px!important}
+  .workspace{padding-left:10px;padding-right:10px}
+  .heroStates>div{min-width:82px;padding:8px}
+  .heroStates b{font-size:10px}
+  .heroStates span{font-size:9px}
+  .tabs button{padding-left:7px!important;padding-right:7px!important;font-size:11px!important}
+  .zoneVolumeControl{min-width:165px}
+  .zoneVolumeControl .volumeSliderWrap{grid-template-columns:minmax(64px,82px) 34px}
+}
+
+/* Avoid a second page-level horizontal scrollbar if a wide inner editor/table exists. */
+.unifiedPeqTableWrap,.wiimEqGraph,.tabs{max-width:100%}
+
+/* v3.0.7.27 — persistent Now Playing footer + selected-zone volume popover */
+.layout{height:calc(100vh - 72px - 88px)!important}
+.globalPlayerBar{
+  height:88px;
+  position:fixed;
+  left:0;right:0;bottom:0;
+  z-index:500;
+  display:grid;
+  grid-template-columns:minmax(240px,1.15fr) 150px minmax(260px,1.45fr) minmax(210px,.8fr);
+  align-items:center;
+  gap:18px;
+  padding:9px 22px;
+  border-top:1px solid var(--line-soft);
+  background:var(--panel);
+  color:var(--text);
+  box-shadow:0 -8px 24px rgba(0,0,0,.16);
+  overflow:visible;
+}
+.globalTrack{display:flex;align-items:center;gap:12px;min-width:0}
+.globalTrack .albumArt{width:52px;height:52px;flex:0 0 52px;border-radius:4px}
+.globalTrack .albumArt svg{width:24px;height:24px}
+.globalTrackText{min-width:0;display:flex;flex-direction:column;gap:4px}
+.globalTrackText strong,.globalTrackText span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.globalTrackText strong{font-size:13px;font-weight:750;color:var(--text)}
+.globalTrackText span{font-size:10px;color:var(--muted)}
+.globalTransport{display:flex;align-items:center;justify-content:center;gap:15px}
+.globalTransport button{width:34px;height:34px;display:grid;place-items:center;background:transparent;color:var(--muted);padding:0;border-radius:50%}
+.globalTransport button:hover{color:var(--text);background:var(--panel2)}
+.globalTransport .globalPlay{width:42px;height:42px;background:var(--text);color:var(--bg)}
+.globalTransport .globalPlay:hover{background:var(--muted);color:var(--bg)}
+.globalProgress{display:grid;grid-template-columns:auto minmax(120px,1fr) auto;align-items:center;gap:10px;min-width:0}
+.globalProgress span{font-size:9px;color:var(--muted);min-width:28px;text-align:center}
+.globalProgress input{width:100%;height:4px;padding:0;border:0;background:transparent;accent-color:var(--text)}
+.globalProgress input:disabled{opacity:.55}
+.globalZone{justify-self:end;display:flex;align-items:center;gap:18px;min-width:0}
+.zoneName{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:90px;max-width:145px;color:var(--muted)}
+.zoneName span{font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.footerVolumeAnchor{position:relative;display:flex;align-items:center;gap:8px}
+.footerSpeakerBtn{width:36px;height:36px;display:grid;place-items:center;border-radius:50%;background:transparent;color:var(--text)}
+.footerSpeakerBtn:hover,.footerSpeakerBtn[aria-expanded="true"]{background:var(--panel2)}
+.footerSpeakerBtn.muted{color:var(--danger)}
+.footerVolumeAnchor>strong{min-width:24px;text-align:left;font-size:11px;color:var(--text)}
+.footerVolumePopover{
+  position:absolute;
+  right:-5px;
+  bottom:54px;
+  width:88px;
+  height:250px;
+  z-index:900;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 10px 10px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel2);
+  box-shadow:0 18px 45px rgba(0,0,0,.45);
+}
+.footerVolumePopover .volumeSliderWrap{height:178px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.footerVolumePopover .footerVerticalRange{
+  writing-mode:vertical-lr;
+  direction:rtl;
+  width:28px!important;
+  height:145px!important;
+  min-height:145px;
+  padding:0;
+  border:0;
+  background:transparent;
+  accent-color:var(--text);
+}
+.footerVolumePopover .sliderValue{font-size:11px;font-weight:750;color:var(--text)}
+.footerMuteBtn{width:68px;height:30px;display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--text);font-size:9px}
+.footerMuteBtn.muted{color:var(--danger);border-color:var(--danger)}
+/* The old v3.0.7.23 top-bar master volume is intentionally retired. */
+.topbar .zoneVolumeControl{display:none!important}
+@media(max-width:1300px){
+  .globalPlayerBar{grid-template-columns:minmax(205px,1fr) 130px minmax(200px,1.1fr) minmax(180px,.75fr);gap:10px;padding-left:14px;padding-right:14px}
+  .globalZone{gap:10px}.zoneName{min-width:78px;max-width:110px}
+}
+@media(max-width:1050px){
+  .globalPlayerBar{grid-template-columns:minmax(190px,1fr) 120px minmax(150px,.8fr) 155px}
+  .globalProgress span:last-child{display:none}
+  .globalProgress{grid-template-columns:auto minmax(90px,1fr)}
+  .zoneName{min-width:70px;max-width:90px}
+}
+
+
+/* v3.0.7.27 modal hotfix — every true dialog owns the viewport layer. */
+.modalBackdrop{
+  position:fixed!important;
+  inset:0!important;
+  z-index:10000!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px!important;
+  overflow:auto!important;
+  isolation:isolate;
+}
+.modalBackdrop>.modal{
+  position:relative!important;
+  z-index:10001!important;
+  width:min(440px,calc(100vw - 36px))!important;
+  max-height:calc(100vh - 36px)!important;
+  overflow:auto!important;
+  margin:auto!important;
+  flex:0 0 auto;
+}
+
+
+/* v3.0.7.29 — USB folder browser shared by A33 and Linkplay A31/A97/A98 */
+.usbLibraryToolbar{display:flex;flex-direction:column;gap:10px;margin:0 0 12px}
+.usbViewTabs{display:flex;gap:6px;flex-wrap:wrap}
+.usbViewTabs button,.usbBreadcrumbs button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);padding:7px 10px;border-radius:3px;font-size:11px}
+.usbViewTabs button:hover,.usbBreadcrumbs button:hover:not(:disabled){background:var(--panel3);color:var(--text);border-color:var(--text)}
+.usbViewTabs button.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+.usbBreadcrumbs{display:flex;align-items:center;gap:5px;min-width:0;overflow-x:auto;padding-bottom:2px}
+.usbBreadcrumbs>span{color:var(--muted2);font-size:11px}
+.usbBreadcrumbs button{white-space:nowrap;padding:5px 7px;background:transparent}
+.usbBreadcrumbs button.current{color:var(--text);font-weight:700}
+.usbBreadcrumbs button:disabled{opacity:.35;cursor:default}
+.usbFolder .usbTrackNo{color:var(--text)}
+.usbFolder>.lucide-chevron-right{color:var(--muted);margin-left:auto}
+@media(max-width:700px){.usbLibraryToolbar{gap:8px}.usbBreadcrumbs{max-width:100%}}
+
+/* Local Music Library v3.0.7.31 */
+.localLibraryPage{padding-bottom:92px}.libraryStatus,.libraryToolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:14px 0}.libraryStatus>div{display:flex;flex-direction:column;min-width:0}.libraryStatus b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.libraryStatus small{opacity:.62;margin-top:4px}.libraryToolbar{align-items:stretch}.librarySearch{max-width:360px;flex:1;margin:0}.albumGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px;margin-top:16px}.albumCard{min-width:0}.albumCard>button{width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:0;cursor:pointer}.albumCard img,.albumPlaceholder{width:100%;aspect-ratio:1;border-radius:5px;object-fit:cover;background:rgba(127,127,127,.12);display:flex;align-items:center;justify-content:center}.albumCard b,.albumCard span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.albumCard b{margin-top:8px}.albumCard span{font-size:12px;opacity:.62;margin-top:3px}.albumCard .localTrackList{grid-column:1/-1;margin-top:8px}.localTrackList{display:flex;flex-direction:column;margin-top:12px;border-top:1px solid var(--line,#30343a)}.localTrack{display:grid;grid-template-columns:34px minmax(0,1fr) 50px 24px;align-items:center;gap:10px;width:100%;border:0;border-bottom:1px solid var(--line,#30343a);background:transparent;color:inherit;text-align:left;padding:10px 8px;cursor:pointer}.localTrack:hover,.localTrack.active{background:rgba(127,127,127,.1)}.localTrackText{display:flex;flex-direction:column;min-width:0}.localTrackText b,.localTrackText small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.localTrackText small{opacity:.6;margin-top:2px}.localTrackNo{opacity:.55;text-align:center}.libraryGroups details{border-bottom:1px solid var(--line,#30343a)}.libraryGroups summary{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:8px;padding:13px 8px;cursor:pointer}.libraryGroups summary span{font-size:12px;opacity:.6}@media(max-width:1250px){.libraryToolbar{flex-direction:column}.librarySearch{max-width:none}.albumGrid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr))}}
+
+/* v3.0.7.32 local playback queue */
+.libraryQueue{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px}.libraryQueue>div{border:1px solid var(--border);padding:10px 12px;min-width:0}.libraryQueue b,.libraryQueue span{display:block}.libraryQueue b{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.65;margin-bottom:4px}.libraryQueue span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:720px){.libraryQueue{grid-template-columns:1fr}}
+
+/* v3.0.7.33 library roots + removable radio presets */
+.libraryActions{display:flex;gap:8px;align-items:center}.libraryRoots{border:1px solid var(--line,#30343a);margin:10px 0 16px}.libraryRoot{display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line,#30343a)}.libraryRoot:last-child{border-bottom:0}.libraryRoot>div{display:flex;flex-direction:column;min-width:0}.libraryRoot b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.libraryRoot small{opacity:.6;margin-top:2px}.libraryRootDot{width:7px;height:7px;border-radius:50%;background:#2dcc70}.libraryRootDot.offline{background:#d16b6b}.radioPresetPlay{border:0;background:transparent;color:inherit;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:12px 24px 9px 8px}.presetRemove{position:absolute;right:5px;top:5px;width:22px;height:22px;display:grid;place-items:center;border:1px solid transparent;background:transparent;color:var(--muted,#888);border-radius:3px}.presetRemove:hover{border-color:var(--line,#444);color:var(--text,#fff);background:rgba(127,127,127,.12)}
+
+/* v3.0.7.37 — Device / Setting navigation + native device presets */
+.sideItem.disabled{opacity:.45;cursor:default}.devicePresetGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.devicePresetGrid button{min-height:58px;border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer}.devicePresetGrid button:hover{border-color:var(--text);background:var(--active-bg)}.devicePresetGrid button span{font-size:15px;font-weight:800}.devicePresetGrid button b{font-size:9px;font-weight:600;color:var(--muted)}@media(max-width:850px){.devicePresetGrid{grid-template-columns:repeat(2,1fr)}}
+
+.internetRadioPresetsBlock{margin:2px 0 16px;padding-bottom:14px;border-bottom:1px solid #1f3348}
+
+/* v3.0.7.46 — shared static IPv4 settings */
+.staticIpColumns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.staticIpCard{background:#0c1928;border:1px solid #203249;border-radius:8px;padding:15px}.staticIpHead{display:flex;align-items:center;margin-bottom:13px}.staticIpHead div{display:flex;flex-direction:column;gap:3px}.staticIpHead b{font-size:12px}.staticIpHead span{font-size:9px;color:#70869f}.staticIpGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.networkWarning{margin-top:14px;padding:11px 13px;border:1px solid #594522;background:#211b10;border-radius:7px;color:#d9bd7b;font-size:10px;line-height:1.45}@media(max-width:900px){.staticIpColumns{grid-template-columns:1fr}.staticIpGrid{grid-template-columns:1fr}}
+
+/* v3.0.7.47 — Network Static IP cards follow the global airControl theme */
+.staticIpCard{
+  background:var(--panel2)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+  box-shadow:none!important;
+}
+.staticIpHead b{color:var(--text)!important}
+.staticIpHead span,.staticIpGrid label{color:var(--muted)!important}
+.staticIpGrid input{
+  background:var(--panel)!important;
+  border-color:var(--line)!important;
+  color:var(--text)!important;
+}
+.staticIpGrid input:focus{border-color:var(--text)!important;box-shadow:none!important}
+
+/* v3.0.7.48 — unavailable legacy network interface */
+.staticIpCard.disabled { opacity: .55; }
+.staticIpCard.disabled input { cursor: not-allowed; }
+
+
+/* v4.0.1 — Windows-only DPI/layout correction.
+   Segoe UI has wider metrics than macOS system fonts at common 125–150% scaling. */
+.platform-windows body,
+.platform-windows button,
+.platform-windows input,
+.platform-windows select{font-family:"Segoe UI",Arial,sans-serif}
+.platform-windows .content{min-width:0}
+.platform-windows .workspace{min-width:0}
+.platform-windows .panel{min-width:0}
+.platform-windows .track{min-width:0}
+.platform-windows .trackInfo{min-width:0;flex:1}
+.platform-windows .trackInfo strong,
+.platform-windows .trackInfo span,
+.platform-windows .trackInfo small{overflow-wrap:anywhere}
+.platform-windows .deviceHero{min-width:0}
+.platform-windows .heroInfo{min-width:0}
+.platform-windows .heroMeta{overflow-wrap:anywhere}
+
+@media(max-width:1450px){
+  .platform-windows .sidebar{width:170px;flex:0 0 170px}
+  .platform-windows .deviceColumn{width:275px;flex:0 0 275px}
+  .platform-windows .workspace{padding-left:12px;padding-right:12px}
+  .platform-windows .deviceHero{height:auto;min-height:126px}
+  .platform-windows .heroStates>div{min-width:90px}
+  .platform-windows .topPanels{grid-template-columns:1fr}
+  .platform-windows .panel{padding:14px}
+  .platform-windows .trackInfo strong{font-size:14px;line-height:1.28}
+  .platform-windows .quickGrid button{min-height:78px}
+}
+@media(max-width:1250px){
+  .platform-windows .sidebar{width:150px;flex-basis:150px}
+  .platform-windows .deviceColumn{width:235px;flex-basis:235px}
+  .platform-windows .heroStates>div{min-width:78px;padding:7px}
+  .platform-windows .heroStates b{font-size:9px}
+  .platform-windows .heroStates span{font-size:8px}
+  .platform-windows .tabs button{padding-left:6px!important;padding-right:6px!important;font-size:10px!important}
+}
+
+
+/* v4.0.4 — visible app version next to airControl brand. */
+.brandTitleRow{display:flex;align-items:baseline;gap:7px}
+.brandVersion{font-size:10px;font-weight:650;letter-spacing:0;color:var(--muted,#7890aa);white-space:nowrap}
+
+/* v4.1.0 device discovery */
+.spin{animation:aircontrol-spin .9s linear infinite}
+@keyframes aircontrol-spin{to{transform:rotate(360deg)}}
+button:disabled{opacity:.58;cursor:default}
+
+
+/* v4.2.0 — network music sources */
+.networkLibraryTabs{display:flex;gap:7px;margin:0 0 14px;flex-wrap:wrap}.networkLibraryTabs button{border:1px solid var(--line);background:var(--panel2);color:var(--muted);padding:8px 12px;border-radius:5px;cursor:pointer;font-size:10px;font-weight:700}.networkLibraryTabs button.active{color:var(--text);border-color:var(--text);background:var(--active-bg)}.localLibraryActions{justify-content:flex-end;margin-bottom:10px}.networkServerGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:10px}.networkServerCard{display:flex;align-items:center;gap:12px;min-height:76px;padding:12px;border:1px solid var(--line);background:var(--panel2);border-radius:7px}.networkServerCard>div{display:flex;flex-direction:column;min-width:0;gap:3px}.networkServerCard b{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.networkServerCard span{font-size:9px;color:var(--muted)}.networkServerCard small{font-size:8px;color:var(--muted);opacity:.75}
+
+/* v4.3.0 DLNA ContentDirectory browser */
+.networkServerButton{width:100%;color:inherit;text-align:left;cursor:pointer}.networkServerButton:hover{border-color:var(--text)}.dlnaBrowser{display:flex;flex-direction:column;gap:10px}.dlnaBrowserHead{display:flex;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}.dlnaBrowserHead>div{display:flex;flex-direction:column;gap:3px;min-width:0}.dlnaBrowserHead b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlnaBrowserHead small{font-size:8px;color:var(--muted)}.dlnaItemList{display:flex;flex-direction:column;gap:5px}.dlnaItem{display:grid;grid-template-columns:42px minmax(0,1fr) 24px;align-items:center;gap:10px;width:100%;padding:8px;border:1px solid var(--line);border-radius:6px;background:var(--panel2);color:var(--text);text-align:left;cursor:pointer}.dlnaItem:hover{border-color:var(--text)}.dlnaItem img,.dlnaItemIcon{width:42px;height:42px;border-radius:4px;object-fit:cover;display:flex;align-items:center;justify-content:center;background:var(--active-bg)}.dlnaItem>span{display:flex;flex-direction:column;gap:3px;min-width:0}.dlnaItem b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlnaItem small{font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.dlnaItem em{font-style:normal;color:var(--muted);display:flex;justify-content:center}
+/* v4.3.1 — active item in airControl-owned DLNA queue */
+.dlnaItem.active{border-color:var(--text);background:var(--active-bg)}
+
+/* v4.4.0 SMB connect/browser */
+.smbConnect{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;border:1px solid var(--line);border-radius:7px;background:var(--panel2)}.smbConnect label{display:flex;flex-direction:column;gap:5px;font-size:9px;color:var(--muted)}.smbConnect input{width:100%;box-sizing:border-box}.smbConnect .primaryBtn{align-self:end}.smbConnect>small{grid-column:1/-1;color:var(--muted);font-size:8px}
+
+/* v4.4.9 — compact zone cards */
+.deviceCard.zoneCard{display:block;cursor:pointer;padding:11px 12px;min-height:0}
+.zoneCardTop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:9px}
+.zoneIdentity{min-width:0;display:flex;flex-direction:column;gap:4px}
+.zoneIdentity>strong{font-size:14px;line-height:1.1;color:var(--text,#e9f1fb);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zoneIdentity>div{display:flex;align-items:center;gap:9px;min-width:0}
+.zoneType{font-size:10px;color:#8190a2}
+.zoneIdentity .status{font-size:10px!important}
+.zoneSettingsBtn{width:27px;height:27px;display:grid;place-items:center;flex:0 0 27px;border:1px solid transparent;border-radius:6px;background:transparent;color:#8e9bab;padding:0}
+.zoneSettingsBtn:hover{background:rgba(255,255,255,.06);border-color:var(--line,#30445e);color:var(--text,#fff)}
+.zoneNowPlaying{display:grid;grid-template-columns:44px minmax(0,1fr);gap:9px;align-items:center;margin-bottom:9px}
+.zoneNowPlaying .albumArt{width:44px;height:44px;min-width:44px;border-radius:5px;margin:0;overflow:hidden}
+.zoneNowPlaying .albumArt img{width:100%;height:100%;object-fit:cover}
+.zoneNowPlaying .albumArt svg{width:22px;height:22px}
+.zoneTrackText{display:flex;flex-direction:column;gap:2px;min-width:0}
+.zoneTrackText b,.zoneTrackText span,.zoneTrackText small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zoneTrackText b{font-size:11px;color:var(--text,#e9f1fb);font-weight:650}
+.zoneTrackText span{font-size:10px;color:#9ba8b7}
+.zoneTrackText small{font-size:9px;color:#69798b}
+.zoneVolume{display:grid;grid-template-columns:16px minmax(0,1fr) 31px;gap:7px;align-items:center;color:#8494a6}
+.zoneVolume .volumeSliderWrap{width:100%;min-width:0}
+.zoneVolume .zoneRange{width:100%;margin:0}
+.zoneVolume>strong{font-size:9px;text-align:right;color:#8998a9;font-variant-numeric:tabular-nums}
+
+.multiroomZoneList{display:flex;flex-direction:column;gap:8px;margin-top:12px}.multiroomZone{display:grid;grid-template-columns:minmax(180px,1fr) 90px 150px;align-items:center;gap:12px;padding:12px 14px;border:1px solid #20364f;border-radius:8px;background:#091725}.multiroomZone.selected{border-color:#3b6689;background:#0b1c2d}.multiroomZone>div{display:flex;flex-direction:column;gap:3px}.multiroomZone b{font-size:12px}.multiroomZone span,.multiroomZone small{font-size:9px;color:#71889f}.multiroomZone strong{font-size:10px;color:#b8d7ef;text-transform:uppercase;letter-spacing:.05em}@media(max-width:900px){.multiroomZone{grid-template-columns:1fr auto}.multiroomZone small{grid-column:1/-1}}
+
+
+/* v4.4.24 — Multiroom follows the current airControl palette; no legacy blue cards. */
+.multiroomZoneList{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.multiroomZone{display:grid;grid-template-columns:minmax(180px,1fr) 74px 145px auto;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border)!important;border-radius:8px;background:var(--panel2)!important;color:var(--text)!important}
+.multiroomZone.selected{border-color:var(--accent)!important;background:var(--panel3)!important}
+.multiroomZoneIdentity{display:flex;flex-direction:column;gap:3px;min-width:0}.multiroomZone b{font-size:12px;color:var(--text)!important}.multiroomZone span,.multiroomZone small{font-size:9px;color:var(--muted)!important}.multiroomZone strong{font-size:10px;color:var(--text)!important;text-transform:uppercase;letter-spacing:.05em}.multiroomActions{display:flex;justify-content:flex-end;gap:7px}.multiroomActions .ghostBtn{white-space:nowrap}.multiroomMessage{margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:7px;background:var(--panel2);font-size:10px;color:var(--text)}
+/* Artwork is geometry, text is flexible: never squeeze/crop the square because a title is long. */
+.zoneNowPlaying{min-width:0}.zoneNowPlaying .albumArt{width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;flex:0 0 44px!important;aspect-ratio:1/1}.zoneTrackText{min-width:0}.zoneTrackText b{font-size:clamp(9px,1vw,11px);line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.zoneTrackText span,.zoneTrackText small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nowPlayingHero{grid-template-columns:auto minmax(0,1fr)!important}.nowPlayingHero .albumArt.big{flex:none!important;aspect-ratio:1/1!important;object-fit:cover}.nowPlayingHero .trackInfo{min-width:0!important}.nowPlayingHero .trackInfo strong{font-size:clamp(16px,2.1vw,27px)!important;line-height:1.08!important;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}.nowPlayingHero .trackInfo>span,.nowPlayingHero .trackInfo>small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:900px){.multiroomZone{grid-template-columns:1fr auto}.multiroomZone small,.multiroomActions{grid-column:1/-1}.multiroomActions{justify-content:flex-start}}
+
+/* v4.4.25: Linkplay Multiroom is status-only until native write commands are verified. */
+.multiroomStatusOnly{font-size:9px;color:var(--muted);white-space:nowrap;padding:7px 9px;border:1px solid var(--border);border-radius:5px;background:transparent}
+
+/* v4.4.26 — Now Playing artwork always remains square; text yields first. */
+.nowPlayingHero{width:100%!important;min-width:0!important;grid-template-columns:clamp(112px,22%,176px) minmax(0,1fr)!important;align-items:center!important}
+.nowPlayingHero .albumArt.big{width:100%!important;height:auto!important;min-width:0!important;max-width:176px!important;aspect-ratio:1/1!important;justify-self:start!important;overflow:hidden!important;flex:none!important}
+.nowPlayingHero .albumArt.big img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
+.nowPlayingHero .trackInfo{min-width:0!important;max-width:100%!important;overflow:hidden!important}
+.nowPlayingHero .trackInfo strong{font-size:clamp(15px,1.8vw,24px)!important;line-height:1.08!important;-webkit-line-clamp:4!important}
+@media(max-width:760px){.nowPlayingHero{grid-template-columns:96px minmax(0,1fr)!important}.nowPlayingHero .albumArt.big{max-width:96px!important}.nowPlayingHero .trackInfo strong{font-size:clamp(13px,2.2vw,18px)!important}}
+
+/* v4.4.27 — show the complete Now Playing artwork; never crop album/radio art. */
+.nowPlayingHero .albumArt.big img{object-fit:contain!important;object-position:center!important}
+
+
+/* v4.4.28 — Salvador Style first geometry prototype.
+   The structural geometry is the supplied platForma icon itself; UI is overlaid,
+   never allowed to redraw/add/move structural vertices or edges. */
+.salvadorSwitch{display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:9px;padding:6px 9px;cursor:pointer;font:inherit}
+.salvadorSwitch img{width:23px;height:19px;object-fit:contain;filter:var(--salvador-icon-filter,none)}
+.salvadorRoot{position:fixed;inset:0;background:#000;color:#fff;z-index:9999;overflow:auto;font-family:Inter,Segoe UI,system-ui,sans-serif}
+.salvadorTop{height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid #222;background:#050505}
+.salvadorTop>div{display:flex;align-items:baseline;gap:9px}.salvadorTop b{font-size:20px}.salvadorTop span{color:#aaa;font-size:11px}.salvadorTop small{color:#777;margin-left:10px}
+.salvadorTop button{border:1px solid #555;background:#0a0a0a;color:#fff;border-radius:18px;padding:8px 14px;cursor:pointer}
+.salvadorStage{position:relative;width:min(94vw,calc((100vh - 82px)*1.2727));aspect-ratio:1400/1100;margin:12px auto 20px;background:#000;overflow:hidden}
+.salvadorSkeleton{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none;user-select:none;z-index:1}
+.salvadorZones,.salvadorPlayer,.salvadorSources,.salvadorLower{position:absolute;z-index:2}
+.salvadorZones{left:8%;top:19%;width:31%;height:46%;padding:2% 2.2% 1.5%}
+.salvadorSources{left:70.5%;top:19%;width:20%;height:46%;padding:2% 1.5%}
+.salvadorPlayer{left:25%;top:20%;width:47%;height:47%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1% 5% 0}
+.salvadorLower{left:24%;top:71%;width:50%;height:18%;display:flex;align-items:center;justify-content:space-between;padding:1% 3%;gap:4%}
+.salvadorZones h2,.salvadorSources h2{font-size:clamp(11px,1.1vw,17px);font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#999;margin:0 0 5%}
+.salvadorZoneList{display:flex;flex-direction:column;gap:2%}.salvadorZoneList button{display:flex;align-items:center;gap:9px;text-align:left;background:transparent;color:#fff;border:1px solid transparent;border-radius:8px;padding:5px 7px;cursor:pointer;min-height:35px}.salvadorZoneList button.active{border-color:#777;background:#ffffff0b}.salvadorZoneList b{display:block;font-size:clamp(10px,1.2vw,18px);font-weight:500}.salvadorZoneList small{display:block;color:#888;font-size:clamp(7px,.72vw,11px);margin-top:1px}.zoneGlyph{font-size:clamp(14px,1.7vw,25px);width:28px;text-align:center}
+.salvadorArtwork{width:clamp(64px,9vw,132px);aspect-ratio:1/1;margin-top:2%}.salvadorArtwork .artwork,.salvadorArtwork img{width:100%!important;height:100%!important;object-fit:contain!important;border-radius:7px}
+.salvadorMeta{text-align:center;max-width:90%;margin-top:2%}.salvadorMeta small,.salvadorMeta span{display:block;color:#bbb;font-size:clamp(8px,1vw,15px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.salvadorMeta strong{display:block;font-size:clamp(14px,2vw,30px);line-height:1.08;margin:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salvadorProgress{width:78%;margin-top:3%}.salvadorProgress input{width:100%;accent-color:#fff}.salvadorProgress>div{display:flex;justify-content:space-between;font-size:clamp(8px,.8vw,12px);color:#ccc}
+.salvadorTransport{display:flex;align-items:center;gap:clamp(14px,2.2vw,34px);margin-top:2%}.salvadorTransport button{width:clamp(30px,3.4vw,50px);height:clamp(30px,3.4vw,50px);border:0;background:transparent;color:#fff;font-size:clamp(16px,2vw,28px);cursor:pointer}.salvadorTransport button.main{border:1px solid #fff;border-radius:50%;width:clamp(42px,4.7vw,70px);height:clamp(42px,4.7vw,70px)}
+.sourceGroup{width:100%;text-align:left;background:transparent;color:#fff;border:1px solid #777;border-radius:8px;padding:8px;cursor:pointer}.sourceGroup b{display:block;font-size:clamp(10px,1.2vw,17px)}.sourceGroup small{color:#999;font-size:clamp(7px,.7vw,10px)}.sourceLabel{margin:8% 0 3%;color:#888;text-transform:uppercase;letter-spacing:.1em;font-size:clamp(8px,.8vw,11px)}.salvadorSourceList{display:grid;grid-template-columns:1fr 1fr;gap:5px}.salvadorSourceList button{background:transparent;color:#ddd;border:1px solid #444;border-radius:7px;padding:6px 4px;font-size:clamp(8px,.8vw,12px);cursor:pointer}.salvadorSourceList button.active{border-color:#fff;color:#fff;background:#ffffff12}
+.salvadorLower>div:first-child span,.salvadorLower>div:first-child small{display:block;color:#888;font-size:clamp(8px,.8vw,12px)}.salvadorLower>div:first-child b{display:block;font-size:clamp(13px,1.6vw,23px);margin:2px 0}.salvadorVolume{display:flex;align-items:center;gap:8px;width:55%}.salvadorVolume input{width:100%;accent-color:#fff}.salvadorVolume b{min-width:38px;font-size:clamp(10px,1vw,15px)}
+@media(max-width:900px){.salvadorTop small{display:none}.salvadorZoneList button{padding:2px 4px;min-height:27px}.salvadorSources{padding-top:1%}.salvadorArtwork{width:8vw}}
+
+
+/* v4.4.29 — Salvador layout refinement.
+   Brand skeleton coordinates are intentionally untouched. Only content is moved inward. */
+.salvadorZones{left:10.5%;top:22%;width:28%;height:42%;padding:1.6% 2.8% 1.5% 1.8%;overflow:hidden}
+.salvadorZones h2{margin-left:4%;margin-bottom:4%}
+.salvadorZoneList{gap:1%;width:88%;margin-left:4%}
+.salvadorZoneList button{width:100%;min-width:0;padding:4px 6px;min-height:32px}
+.salvadorZoneList button>span:last-child{min-width:0;overflow:hidden}
+.salvadorZoneList b,.salvadorZoneList small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salvadorZoneList b{font-size:clamp(10px,1.05vw,17px)}
+.zoneGlyph{flex:0 0 25px;width:25px}
+
+.salvadorSources{left:70.5%;top:22%;width:18.5%;height:40%;padding:1.6% 2% 1.5% 1.2%;overflow:hidden}
+.salvadorSources h2{margin-bottom:5%}
+.sourceGroup{padding:7px;min-width:0;overflow:hidden}
+.sourceGroup b,.sourceGroup small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salvadorSourceList{grid-template-columns:1fr;gap:4px}
+.salvadorSourceList button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:5px 4px}
+.sourceLabel{margin:6% 0 3%}
+
+.salvadorPlayer{left:31%;top:22%;width:39%;height:43%;padding:1% 4.5% 0;overflow:hidden}
+.salvadorArtwork{width:clamp(74px,10.2vw,148px);max-height:31%;margin-top:0;flex:0 1 auto}
+.salvadorMeta{width:86%;max-width:86%;margin-top:1.5%;min-width:0}
+.salvadorMeta small,.salvadorMeta span,.salvadorMeta strong{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salvadorMeta strong{font-size:clamp(13px,1.65vw,25px)}
+.salvadorProgress{width:70%;margin-top:2.2%;min-height:27px}
+.salvadorProgress.live{display:flex;align-items:center;justify-content:center}
+.salvadorLive{display:flex;align-items:center;justify-content:center;gap:7px;color:#ddd;font-size:clamp(9px,.9vw,13px);letter-spacing:.16em}
+.liveDot{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 8px #fff;display:inline-block}
+.salvadorTransport{margin-top:1.2%;gap:clamp(12px,1.8vw,28px)}
+.salvadorTransport button{width:clamp(28px,3vw,44px);height:clamp(28px,3vw,44px)}
+.salvadorTransport button.main{width:clamp(38px,4.1vw,60px);height:clamp(38px,4.1vw,60px)}
+
+.salvadorLower{left:29.5%;top:71%;width:41%;height:17%;padding:1% 3.2%;gap:5%}
+.salvadorLower>div:first-child{min-width:0;max-width:40%}
+.salvadorLower>div:first-child b,.salvadorLower>div:first-child small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salvadorVolume{width:50%;min-width:0}
+
+@media(max-width:900px){
+ .salvadorZones{left:10%;width:29%;padding-left:1%}.salvadorZoneList{width:90%;margin-left:2%}
+ .salvadorSources{left:70%;width:19.5%;padding-right:1%}
+ .salvadorPlayer{left:30%;width:41%;padding-left:5%;padding-right:5%}
+ .salvadorArtwork{width:8.5vw}
+ .salvadorZoneList button{min-height:25px}.zoneGlyph{flex-basis:20px;width:20px}
+}
+
+/* v4.4.30 — Salvador stepped standard buttons.
+   Buttons stay ordinary horizontal rounded rectangles; only their horizontal
+   offsets form stairs inside the immutable platForma side planes. */
+.salvadorZoneList,.salvadorSourceList{overflow:visible}
+.salvadorZoneList button,.salvadorSourceList button,.sourceGroup{
+  transform:none!important;
+  border-radius:7px;
+  box-sizing:border-box;
+}
+.salvadorZoneList{width:78%;margin-left:15%}
+.salvadorZoneList button{width:100%}
+.salvadorZoneList button:nth-child(1){margin-left:18%}
+.salvadorZoneList button:nth-child(2){margin-left:12%}
+.salvadorZoneList button:nth-child(3){margin-left:6%}
+.salvadorZoneList button:nth-child(4){margin-left:0}
+.salvadorZoneList button:nth-child(5){margin-left:-6%}
+.salvadorSources{padding-left:1%;padding-right:1%}
+.salvadorSources .sourceGroup{width:82%;margin-left:0}
+.salvadorSourceList{width:82%;margin-left:5%}
+.salvadorSourceList button{width:100%}
+.salvadorSourceList button:nth-child(1){margin-left:0}
+.salvadorSourceList button:nth-child(2){margin-left:5%}
+.salvadorSourceList button:nth-child(3){margin-left:10%}
+.salvadorSourceList button:nth-child(4){margin-left:15%}
+.salvadorSourceList button:nth-child(5){margin-left:20%}
+.salvadorSourceList button:nth-child(6){margin-left:25%}
+@media(max-width:900px){
+ .salvadorZoneList{width:80%;margin-left:12%}
+ .salvadorSourceList,.salvadorSources .sourceGroup{width:80%}
+}
+
+
+/* v4.4.31 — platForma coordinate authority.
+   All Salvador layout is referenced to the 1382×1138 viewBox in public/platForma-geometry-v1.xml.
+   Button rectangles are positioned from polygon/edge intersections in main.jsx; no nth-child stair offsets. */
+.salvadorStage.geometryV1{aspect-ratio:1382/1138}
+.salvadorStage.geometryV1 .salvadorSkeleton{object-fit:fill}
+.salvadorStage.geometryV1 .salvadorZones,.salvadorStage.geometryV1 .salvadorSources,.salvadorStage.geometryV1 .salvadorPlayer,.salvadorStage.geometryV1 .salvadorLower{padding:0;margin:0;overflow:visible}
+.salvadorStage.geometryV1 .salvadorZones h2,.salvadorStage.geometryV1 .salvadorSources h2{position:absolute;left:8%;top:13%;margin:0}
+.salvadorStage.geometryV1 .salvadorZoneList,.salvadorStage.geometryV1 .salvadorSourceList{position:absolute;inset:0;width:auto;margin:0;display:block;pointer-events:none}
+.salvadorStage.geometryV1 .salvadorZoneList button,.salvadorStage.geometryV1 .salvadorSourceList button,.salvadorStage.geometryV1 .sourceGroup{position:absolute;margin:0!important;height:42px;min-height:0;transform:none!important;border-radius:7px;pointer-events:auto}
+.salvadorStage.geometryV1 .sourceGroup{position:absolute}
+.salvadorStage.geometryV1 .sourceLabel{position:absolute;left:8%;top:29%;margin:0}
+.salvadorStage.geometryV1 .salvadorPlayer{display:flex}
+.salvadorStage.geometryV1 .salvadorLower{display:flex}
+
+.salvadorStage.geometryV1 .salvadorZones,.salvadorStage.geometryV1 .salvadorSources{inset:0!important;width:100%!important;height:100%!important}
+.salvadorStage.geometryV1 .salvadorZones h2{left:17.5%;top:22%}.salvadorStage.geometryV1 .salvadorSources h2{left:65.5%;top:22%}.salvadorStage.geometryV1 .sourceLabel{left:65.5%;top:31%}
+
+
+/* v4.4.33 — platForma axis rules. Geometry comes only from platForma-geometry-v1.xml.
+   Side buttons are positioned by midpoint math in main.jsx. Player contents are centered
+   on the main triangle bisector/symmetry axis; no arbitrary horizontal offsets. */
+.salvadorStage.geometryV1 .salvadorPlayer{align-items:center;text-align:center}
+.salvadorStage.geometryV1 .salvadorArtwork,
+.salvadorStage.geometryV1 .salvadorMeta,
+.salvadorStage.geometryV1 .salvadorProgress,
+.salvadorStage.geometryV1 .salvadorTransport{margin-left:auto;margin-right:auto}
+
+
+/* v4.4.34 — platForma geometry-driven centering.
+   Headings use the same side-plane midpoint axis as buttons.
+   Player artwork, transport, metadata and progress are positioned from the central triangle bounds.
+   Play/Pause is the exact center of the symmetric transport row. */
+.salvadorStage.geometryV1 .salvadorZones h2,
+.salvadorStage.geometryV1 .salvadorSources h2{position:absolute;margin:0!important;text-align:center;transform:none!important;height:auto}
+.salvadorStage.geometryV1 .salvadorPlayer{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;display:block!important;overflow:visible!important}
+.salvadorStage.geometryV1 .salvadorArtwork,
+.salvadorStage.geometryV1 .salvadorTransport,
+.salvadorStage.geometryV1 .salvadorMeta,
+.salvadorStage.geometryV1 .salvadorProgress{position:absolute!important;margin:0!important;box-sizing:border-box}
+.salvadorStage.geometryV1 .salvadorArtwork{aspect-ratio:1/1;height:auto!important;max-height:none!important}
+.salvadorStage.geometryV1 .salvadorTransport{display:grid!important;grid-template-columns:1fr auto 1fr;align-items:center;justify-items:center;gap:0!important}
+.salvadorStage.geometryV1 .salvadorTransport button:first-child{justify-self:end;margin-right:24px}
+.salvadorStage.geometryV1 .salvadorTransport button:last-child{justify-self:start;margin-left:24px}
+.salvadorStage.geometryV1 .salvadorTransport button.main{justify-self:center;margin:0}
+.salvadorStage.geometryV1 .salvadorMeta{text-align:center;min-width:0;overflow:hidden}
+.salvadorStage.geometryV1 .platMetaLine{display:block;width:100%;overflow:hidden;white-space:nowrap;text-align:center;color:#bbb;font-size:clamp(8px,1vw,15px);line-height:1.3}
+.salvadorStage.geometryV1 .platMetaLine.title{color:#fff;font-weight:700;font-size:clamp(14px,1.65vw,25px);line-height:1.12;margin:2px 0}
+.salvadorStage.geometryV1 .platMetaLine span{display:inline-block;white-space:nowrap;max-width:100%}
+.salvadorStage.geometryV1 .platMetaLine.scroll{text-align:left}
+.salvadorStage.geometryV1 .platMetaLine.scroll span{max-width:none;padding-left:100%;animation:platFormaMarquee 12s linear infinite}
+@keyframes platFormaMarquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
+.salvadorStage.geometryV1 .salvadorProgress{min-height:24px}
+
+/* v4.4.35 — platForma strict XML responsive geometry.
+   The stage is the only coordinate host. Side sections and Player are transparent
+   full-stage interaction layers; actual controls receive their coordinates from XML.
+   All vertical dimensions scale with the 1382×1138 viewBox, preventing collisions. */
+.salvadorStage.geometryV1{container-type:size}
+.salvadorStage.geometryV1 .salvadorZones,
+.salvadorStage.geometryV1 .salvadorSources{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;padding:0!important;margin:0!important;pointer-events:none!important}
+.salvadorStage.geometryV1 .salvadorZones h2,
+.salvadorStage.geometryV1 .salvadorSources h2,
+.salvadorStage.geometryV1 .sourceLabel{pointer-events:none}
+.salvadorStage.geometryV1 .salvadorZoneList,
+.salvadorStage.geometryV1 .salvadorSourceList{pointer-events:none!important}
+.salvadorStage.geometryV1 .salvadorZoneList button,
+.salvadorStage.geometryV1 .salvadorSourceList button,
+.salvadorStage.geometryV1 .sourceGroup{pointer-events:auto!important;height:3.69cqh!important;min-height:0!important;padding:.35cqh .55cqw!important}
+.salvadorStage.geometryV1 .salvadorZoneList button{gap:.55cqw!important}
+.salvadorStage.geometryV1 .salvadorZoneList b{font-size:clamp(8px,1.45cqh,17px)!important;line-height:1.05}
+.salvadorStage.geometryV1 .salvadorZoneList small{font-size:clamp(6px,.9cqh,11px)!important;line-height:1.05}
+.salvadorStage.geometryV1 .zoneGlyph{font-size:clamp(10px,1.8cqh,22px)!important;width:2.2cqw!important;flex:0 0 2.2cqw!important}
+.salvadorStage.geometryV1 .sourceGroup b{font-size:clamp(8px,1.45cqh,17px)!important;line-height:1.05}
+.salvadorStage.geometryV1 .sourceGroup small{font-size:clamp(6px,.82cqh,10px)!important;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.salvadorStage.geometryV1 .salvadorSourceList button{font-size:clamp(7px,1.05cqh,12px)!important;line-height:1}
+.salvadorStage.geometryV1 .salvadorZones h2,
+.salvadorStage.geometryV1 .salvadorSources h2{font-size:clamp(9px,1.45cqh,17px)!important;line-height:1}
+.salvadorStage.geometryV1 .sourceLabel{font-size:clamp(7px,.95cqh,11px)!important}
+/* The full-stage Player must not steal clicks from Zones/Sources. Only real controls do. */
+.salvadorStage.geometryV1 .salvadorPlayer{pointer-events:none!important}
+.salvadorStage.geometryV1 .salvadorArtwork{pointer-events:none!important}
+.salvadorStage.geometryV1 .salvadorTransport,
+.salvadorStage.geometryV1 .salvadorTransport button,
+.salvadorStage.geometryV1 .salvadorProgress,
+.salvadorStage.geometryV1 .salvadorProgress input{pointer-events:auto!important}
+.salvadorStage.geometryV1 .salvadorArtwork .artwork,
+.salvadorStage.geometryV1 .salvadorArtwork img{display:block!important;margin:0 auto!important}
+/* Scale Player bands with the geometry instead of fixed viewport-pixel minima. */
+.salvadorStage.geometryV1 .salvadorTransport button{width:3.2cqh!important;height:3.2cqh!important;min-width:0!important;font-size:2.1cqh!important;padding:0!important}
+.salvadorStage.geometryV1 .salvadorTransport button.main{width:5.25cqh!important;height:5.25cqh!important;font-size:2.2cqh!important}
+.salvadorStage.geometryV1 .salvadorTransport button:first-child{margin-right:2.1cqw!important}
+.salvadorStage.geometryV1 .salvadorTransport button:last-child{margin-left:2.1cqw!important}
+.salvadorStage.geometryV1 .platMetaLine{font-size:clamp(7px,1.25cqh,15px)!important}
+.salvadorStage.geometryV1 .platMetaLine.title{font-size:clamp(10px,1.8cqh,25px)!important}
+.salvadorStage.geometryV1 .salvadorLive{font-size:clamp(7px,1.05cqh,13px)!important}
+
+
+/* v4.4.36 — strict platForma artwork geometry.
+   The outer box is sized/centered only by XML math in main.jsx. The Artwork
+   component must fill that box; its legacy 105px albumArt size is forbidden here. */
+.salvadorStage.geometryV1 .salvadorArtwork{overflow:hidden!important;min-width:0!important;min-height:0!important}
+.salvadorStage.geometryV1 .salvadorArtwork .albumArt{width:100%!important;height:100%!important;min-width:0!important;max-width:none!important;min-height:0!important;max-height:none!important;aspect-ratio:1/1!important;margin:0!important;display:grid!important;place-items:center!important;overflow:hidden!important}
+.salvadorStage.geometryV1 .salvadorArtwork .albumArt img{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;margin:0!important}
+/* <=5 words: static, symmetric and never marquee. */
+.salvadorStage.geometryV1 .platMetaLine.static{text-align:center!important}
+.salvadorStage.geometryV1 .platMetaLine.static span{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;animation:none!important;transform:none!important;padding-left:0!important}
+
+/* v4.4.37 — platForma Sources mode + lower contextual browser. */
+.salvadorStage.geometryV1 .sourceModeToggle{pointer-events:auto!important;cursor:pointer;user-select:none}
+.salvadorStage.geometryV1 .salvadorSourceList.frameless button{border-color:transparent!important;background:transparent!important;box-shadow:none!important}
+.salvadorStage.geometryV1 .salvadorSourceList.frameless button:hover{background:rgba(255,255,255,.055)!important}
+.salvadorStage.geometryV1 .salvadorSourceList.frameless button.active{border:1px solid rgba(255,255,255,.78)!important;background:rgba(255,255,255,.055)!important}
+.salvadorStage.geometryV1 .salvadorLower.browserOpen{display:block!important;position:absolute!important;box-sizing:border-box;padding:0!important;overflow:hidden!important}
+.salvadorStage.geometryV1 .platLowerBrowser{position:absolute;left:3%;right:3%;top:7%;bottom:34%;overflow:hidden;display:flex;flex-direction:column;gap:1.2cqh}
+.salvadorStage.geometryV1 .platLowerBrowserHead{display:flex;align-items:center;justify-content:space-between;gap:1cqw}
+.salvadorStage.geometryV1 .platLowerBrowserHead b{font-size:clamp(10px,1.6cqh,18px)}
+.salvadorStage.geometryV1 .platLowerBrowserHead button{border:1px solid #555;background:transparent;color:#ddd;border-radius:7px;padding:.45cqh 1cqw}
+.salvadorStage.geometryV1 .platLowerMenu{display:flex;flex-wrap:wrap;align-content:flex-start;gap:.8cqh .8cqw;overflow:auto}
+.salvadorStage.geometryV1 .platLowerMenu button{background:transparent;color:#ddd;border:0;border-bottom:1px solid #555;padding:.5cqh .4cqw;font-size:clamp(8px,1.15cqh,13px);cursor:pointer}
+.salvadorStage.geometryV1 .platLowerMenu button:hover{color:#fff;border-bottom-color:#fff}
+.salvadorStage.geometryV1 .platLowerMenu span{color:#888;font-size:clamp(8px,1.1cqh,13px)}
+.salvadorStage.geometryV1 .platLowerStatus{position:absolute;left:3%;right:3%;bottom:6%;height:22%;display:flex;align-items:flex-end;justify-content:space-between;gap:2cqw}
+.salvadorStage.geometryV1 .platLowerStatus>div:first-child{display:flex;flex-direction:column;min-width:0}
+.salvadorStage.geometryV1 .platLowerStatus span,.salvadorStage.geometryV1 .platLowerStatus small{font-size:clamp(7px,1cqh,12px);color:#888}
+.salvadorStage.geometryV1 .platLowerStatus b{font-size:clamp(12px,2cqh,23px);line-height:1.05}
+.salvadorStage.geometryV1 .platLowerStatus .salvadorVolume{align-self:flex-end;margin-bottom:.2cqh}
+
+
+/* v4.4.38 — platForma lower contextual browser geometry.
+   Top edge: mode at left, tabs centered in free space, Open at right.
+   Bottom edge: selected zone at left, volume at right.
+   Middle is the only scrollable list; edge controls never scroll or overlap. */
+.salvadorStage.geometryV1 .salvadorLower.browserOpen{padding:0!important}
+.salvadorStage.geometryV1 .platLowerBrowser{display:none!important}
+.salvadorStage.geometryV1 .platLowerTopline{
+  position:absolute;left:3%;right:3%;top:6%;height:17%;
+  display:grid;grid-template-columns:minmax(70px,1fr) minmax(0,3fr) minmax(58px,1fr);
+  align-items:start;gap:1.2cqw;z-index:2
+}
+.salvadorStage.geometryV1 .platLowerMode{justify-self:start;font-size:clamp(9px,1.5cqh,18px);white-space:nowrap}
+.salvadorStage.geometryV1 .platLowerOpen{
+  justify-self:end;border:1px solid #555;background:transparent;color:#ddd;border-radius:7px;
+  padding:.45cqh 1.1cqw;font-size:clamp(8px,1.15cqh,13px);cursor:pointer
+}
+.salvadorStage.geometryV1 .platLowerTabs{
+  min-width:0;display:flex;align-items:flex-start;justify-content:center;gap:clamp(5px,.9cqw,15px);
+  overflow:hidden;white-space:nowrap
+}
+.salvadorStage.geometryV1 .platLowerTabs button{
+  flex:0 1 auto;min-width:0;border:0;border-bottom:1px solid transparent;background:transparent;color:#888;
+  padding:.15cqh .25cqw .45cqh;font-size:clamp(7px,1.05cqh,12px);cursor:pointer;white-space:nowrap
+}
+.salvadorStage.geometryV1 .platLowerTabs button.active{color:#fff;border-bottom-color:#fff}
+.salvadorStage.geometryV1 .platLowerTabs span{color:#888;font-size:clamp(7px,1.05cqh,12px)}
+.salvadorStage.geometryV1 .platLowerList{
+  position:absolute;left:3%;right:3%;top:25%;bottom:31%;
+  overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-width:thin;padding-right:.35cqw
+}
+.salvadorStage.geometryV1 .platLowerRow{
+  width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:1.5cqw;
+  align-items:center;text-align:left;background:transparent;color:#ddd;border:0;border-bottom:1px solid #292929;
+  padding:.62cqh .2cqw;cursor:pointer
+}
+.salvadorStage.geometryV1 .platLowerRow:hover{background:rgba(255,255,255,.045)}
+.salvadorStage.geometryV1 .platLowerRow span,.salvadorStage.geometryV1 .platLowerRow small{
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.salvadorStage.geometryV1 .platLowerRow span{font-size:clamp(8px,1.15cqh,13px)}
+.salvadorStage.geometryV1 .platLowerRow small{font-size:clamp(7px,.95cqh,11px);color:#777;text-align:right}
+.salvadorStage.geometryV1 .platLowerEmpty{color:#777;font-size:clamp(8px,1.1cqh,13px);padding:.6cqh .2cqw}
+.salvadorStage.geometryV1 .platLowerStatus{
+  position:absolute!important;left:3%!important;right:3%!important;bottom:5%!important;height:20%!important;
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(180px,1fr);align-items:end!important;gap:2cqw!important
+}
+.salvadorStage.geometryV1 .platLowerZone{justify-self:start;min-width:0;display:flex;flex-direction:column}
+.salvadorStage.geometryV1 .platLowerStatus .salvadorVolume{justify-self:end!important;align-self:end!important;margin:0!important;min-width:0}
+
+
+/* v4.4.39 strict platForma paired side rows */
+.salvadorStage.geometryV1{
+  --pf-row1:31%;
+  --pf-row2:38%;
+  --pf-row3:45%;
+  --pf-row4:52%;
+  --pf-row5:59%;
+}
+/* Both sides consume identical vertical slots. Do not collapse missing rows. */
+.salvadorStage.geometryV1 .salvadorZonesList,
+.salvadorStage.geometryV1 .salvadorInputButtons{
+  position:absolute!important;
+  top:27%!important;
+  height:38%!important;
+  display:grid!important;
+  grid-template-rows:repeat(5,1fr)!important;
+  align-items:center!important;
+  gap:0!important;
+}
+.salvadorStage.geometryV1 .salvadorZonesList{left:0!important;right:auto!important}
+.salvadorStage.geometryV1 .salvadorInputButtons{left:auto!important;right:0!important}
+
+/* Selected right-side item has exactly the same active stroke weight/radius as a selected zone. */
+.salvadorStage.geometryV1 .salvadorInputButtons button,
+.salvadorStage.geometryV1 .salvadorZonesList button{
+  border:1px solid transparent!important;
+  border-radius:8px!important;
+  box-sizing:border-box!important;
+}
+.salvadorStage.geometryV1 .salvadorInputButtons button.active,
+.salvadorStage.geometryV1 .salvadorZonesList button.active{
+  border:2px solid #ffa300!important;
+}
+
+/* v4.4.39: no old Library primary card; LIBRARY/INPUTS heading is the switch. */
+.salvadorStage.geometryV1 .salvadorLibraryButton,
+.salvadorStage.geometryV1 .salvadorInputsLabel{display:none!important}
+
+/* Context top edge is three independent anchors, never a flex chain. */
+.salvadorStage.geometryV1 .platLowerTopline{display:block!important;position:absolute!important;left:3%!important;right:3%!important;top:6%!important;height:18%!important}
+.salvadorStage.geometryV1 .platLowerMode{position:absolute!important;left:0!important;top:0!important}
+.salvadorStage.geometryV1 .platLowerTabs{
+  position:absolute!important;left:22%!important;right:22%!important;top:0!important;
+  display:flex!important;justify-content:center!important;gap:clamp(10px,1.5cqw,24px)!important;
+}
+.salvadorStage.geometryV1 .platLowerOpen{
+  position:absolute!important;right:0!important;top:0!important;margin:0!important
+}
+/* Prevent tab text collisions at small sizes. */
+.salvadorStage.geometryV1 .platLowerTabs button{
+  overflow:hidden!important;text-overflow:ellipsis!important;max-width:31%!important;
+}
+
+/* Artwork should be visually substantial on large canvases; JS geometry still caps it
+   symmetrically before it can touch the triangle edges. */
+.salvadorStage.geometryV1 .salvadorArtwork{min-width:0!important;min-height:0!important}
+
+
+/* v4.4.40 — corrections after visual test.
+   The heading itself is the Library/Inputs switch. There is NO Library card. */
+.salvadorStage.geometryV1 .salvadorSources .sourceGroup{display:none!important}
+.salvadorStage.geometryV1 .salvadorSources h2.sourceModeToggle{
+  pointer-events:auto!important;cursor:pointer!important;z-index:20!important;
+}
+
+/* Active strokes are identical on both sides. Frameless means inactive only. */
+.salvadorStage.geometryV1 .salvadorZoneList button,
+.salvadorStage.geometryV1 .salvadorSourceList.frameless button{
+  box-sizing:border-box!important;border-radius:7px!important;border:1px solid transparent!important;
+}
+.salvadorStage.geometryV1 .salvadorZoneList button.active,
+.salvadorStage.geometryV1 .salvadorSourceList.frameless button.active{
+  border:2px solid #ffa300!important;
+  background:rgba(255,255,255,.055)!important;
+  box-shadow:none!important;
+}
+
+/* Artwork: the JS/XML geometry owns x/y/size. Legacy viewport widths must never override it. */
+.salvadorStage.geometryV1 .salvadorArtwork{
+  min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;
+  margin:0!important;padding:0!important;display:block!important;z-index:4!important;
+}
+.salvadorStage.geometryV1 .salvadorArtwork .albumArt{
+  width:100%!important;height:100%!important;display:grid!important;place-items:center!important;
+}
+.salvadorStage.geometryV1 .salvadorArtwork .albumArt img{
+  width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;
+}
+.salvadorStage.geometryV1 .salvadorArtwork .albumArt svg{
+  width:42%!important;height:42%!important;
+}
+
+/* Context header: hard three-column grid. No element can overlap another. */
+.salvadorStage.geometryV1 .platLowerTopline{
+  position:absolute!important;left:4%!important;right:4%!important;top:5%!important;height:16%!important;
+  display:grid!important;grid-template-columns:22% 56% 22%!important;align-items:start!important;
+}
+.salvadorStage.geometryV1 .platLowerMode{
+  position:static!important;justify-self:start!important;align-self:start!important;white-space:nowrap!important;
+}
+.salvadorStage.geometryV1 .platLowerTabs{
+  position:static!important;display:flex!important;justify-self:stretch!important;justify-content:center!important;
+  align-items:start!important;gap:clamp(6px,1cqw,18px)!important;min-width:0!important;overflow:hidden!important;
+}
+.salvadorStage.geometryV1 .platLowerTabs button{
+  position:static!important;min-width:0!important;max-width:none!important;padding:.2cqh .45cqw!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.salvadorStage.geometryV1 .platLowerOpen{
+  position:static!important;justify-self:end!important;align-self:start!important;margin:0!important;
+}
+/* List is isolated between fixed top header and fixed bottom status. */
+.salvadorStage.geometryV1 .platLowerList{
+  position:absolute!important;left:4%!important;right:4%!important;top:24%!important;bottom:25%!important;
+  overflow-y:auto!important;overflow-x:hidden!important;
+}
+.salvadorStage.geometryV1 .platLowerStatus{
+  position:absolute!important;left:4%!important;right:4%!important;bottom:5%!important;height:16%!important;
+}
+
+
+/* v4.4.41: central artwork is a geometry-owned layer, never hidden by metadata overflow. */
+.salvadorStage.geometryV1 .salvadorArtwork{
+  visibility:visible!important;opacity:1!important;overflow:hidden!important;
+  position:absolute!important;transform:none!important;pointer-events:none!important;
+}
+.salvadorStage.geometryV1 .salvadorArtwork img{
+  visibility:visible!important;opacity:1!important;width:100%!important;height:100%!important;
+  object-fit:contain!important;object-position:50% 50%!important;
+}
+
+/* v4.4.41 lower context header: four independent non-overlapping columns.
+   Source name | tabs (wide) | spacer | Open. */
+.salvadorStage.geometryV1 .platLowerTopline{
+  position:absolute!important;
+  left:4%!important;right:4%!important;top:5%!important;height:18%!important;
+  display:grid!important;
+  grid-template-columns:minmax(105px,20%) minmax(0,1fr) 18px minmax(62px,14%)!important;
+  column-gap:clamp(8px,1.4cqw,20px)!important;
+  align-items:start!important;
+  overflow:visible!important;
+}
+.salvadorStage.geometryV1 .platLowerMode{
+  grid-column:1!important;position:static!important;justify-self:start!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  max-width:100%!important;
+}
+.salvadorStage.geometryV1 .platLowerTabs{
+  grid-column:2!important;position:static!important;
+  width:100%!important;min-width:0!important;
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:clamp(5px,.8cqw,12px)!important;overflow:hidden!important;
+}
+.salvadorStage.geometryV1 .platLowerTabs button{
+  position:static!important;width:100%!important;min-width:0!important;max-width:100%!important;
+  margin:0!important;padding:2px 4px!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+  text-align:center!important;
+}
+.salvadorStage.geometryV1 .platLowerOpen{
+  grid-column:4!important;position:static!important;justify-self:end!important;
+  width:auto!important;min-width:58px!important;max-width:100%!important;margin:0!important;
+}
+/* Never allow old absolute tab rules to leak into children. */
+.salvadorStage.geometryV1 .platLowerTopline > *{top:auto!important;left:auto!important;right:auto!important}
+
+/* v4.4.42 — hard visual correction from screenshot */
+.salvadorStage.geometryV1 .platLowerTopline{
+  left:4%!important;right:4%!important;top:5%!important;width:auto!important;
+  display:grid!important;
+  grid-template-columns:20% minmax(250px,1fr) 16% !important;
+  gap:3%!important;
+  overflow:visible!important;
+}
+.salvadorStage.geometryV1 .platLowerMode{grid-column:1!important;justify-self:start!important}
+.salvadorStage.geometryV1 .platLowerTabs{
+  grid-column:2!important;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(70px,1fr))!important;
+  gap:10px!important;
+  width:100%!important;
+  visibility:visible!important;opacity:1!important;
+  overflow:visible!important;
+}
+.salvadorStage.geometryV1 .platLowerTabs button{
+  display:block!important;visibility:visible!important;opacity:1!important;
+  width:100%!important;min-width:70px!important;
+  padding:3px 6px!important;margin:0!important;
+}
+.salvadorStage.geometryV1 .platLowerOpen{
+  grid-column:3!important;
+  justify-self:end!important;align-self:start!important;
+  position:static!important;
+  margin:0!important;
+}
+/* Artwork box must render above central content and use its XML-computed inline box. */
+.salvadorStage.geometryV1 .salvadorArtwork{
+  display:block!important;visibility:visible!important;opacity:1!important;
+  z-index:12!important;background:transparent!important;
+}
+.salvadorStage.geometryV1 .salvadorArtwork img{
+  display:block!important;visibility:visible!important;opacity:1!important;
+  width:100%!important;height:100%!important;object-fit:contain!important;
+}
+
+/* v4.4.43: strict single-line toolbar inside lower rectangle */
+.salvadorStage.geometryV1 .platLowerTopline{position:absolute!important;left:5%!important;right:5%!important;top:6%!important;width:90%!important;display:grid!important;grid-template-columns:minmax(110px,1fr) minmax(360px,3fr) minmax(90px,1fr)!important;align-items:center!important;column-gap:20px!important;overflow:visible!important}
+.salvadorStage.geometryV1 .platLowerMode{grid-column:1!important;justify-self:start!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;max-width:100%!important}
+.salvadorStage.geometryV1 .platLowerTabs{grid-column:2!important;display:flex!important;flex-wrap:nowrap!important;justify-content:center!important;align-items:center!important;gap:22px!important;width:100%!important;min-width:0!important;overflow:visible!important}
+.salvadorStage.geometryV1 .platLowerTabs button{display:inline-block!important;flex:0 0 auto!important;width:auto!important;min-width:0!important;margin:0!important;padding:2px 3px!important;border:0!important;white-space:nowrap!important}
+.salvadorStage.geometryV1 .platLowerOpen{grid-column:3!important;justify-self:end!important;align-self:center!important;position:static!important;margin:0!important;white-space:nowrap!important}
+/* Restore v4.4.36 artwork renderer, keep it centered/visible. */
+.salvadorStage.geometryV1 .salvadorArtwork{display:block!important;visibility:visible!important;opacity:1!important;z-index:20!important;pointer-events:none!important}
+.salvadorStage.geometryV1 .salvadorArtwork>*{visibility:visible!important;opacity:1!important}
+.salvadorStage.geometryV1 .salvadorArtwork img{display:block!important;width:100%!important;height:100%!important;object-fit:contain!important}
+
+/* v4.4.44 Radio Browser drill-down */
+.salvadorStage.geometryV1 .radioBreadcrumb{display:flex;align-items:center;gap:12px;padding:3px 0 7px;border-bottom:1px solid rgba(255,255,255,.12);white-space:nowrap;overflow:hidden}
+.salvadorStage.geometryV1 .radioBreadcrumb button{flex:0 0 auto;border:0;background:none;padding:2px 0;cursor:pointer}
+.salvadorStage.geometryV1 .radioBreadcrumb span{overflow:hidden;text-overflow:ellipsis}
+.salvadorStage.geometryV1 .radioStationRow{width:100%;display:grid;grid-template-columns:minmax(140px,1fr) minmax(100px,.7fr);align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid rgba(255,255,255,.12);padding:6px 0;cursor:pointer}
+.salvadorStage.geometryV1 .radioStationRow:hover{background:rgba(255,255,255,.045)}
+.salvadorStage.geometryV1 .radioStationDetail{height:100%;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px}
+.salvadorStage.geometryV1 .radioStationDetail small{opacity:.58}
+.salvadorStage.geometryV1 .radioStationDetail button{border:1px solid rgba(255,255,255,.45);border-radius:7px;padding:5px 12px;background:none}
+
+/* v4.4.46 — native Linkplay multiroom directly on platForma zone tabs */
+.salvadorStage.geometryV1 .salvadorZoneList button{padding-right:2.5cqw!important}
+.salvadorStage.geometryV1 .salvadorZoneList button.grouped{border-color:#777!important;background:#ffffff10!important}
+.zoneLabel{min-width:0;overflow:hidden;display:block;flex:1}.zoneGroupButton{position:absolute;right:.55cqw;top:50%;transform:translateY(-50%);width:1.55cqw;height:1.55cqw;min-width:20px;min-height:20px;border:1px solid #555;border-radius:50%;display:grid;place-items:center;font-size:clamp(9px,1cqw,14px);color:#999;background:#111;z-index:4}.zoneGroupButton:hover,.zoneGroupButton.on{color:#fff;border-color:#aaa;background:#252525}
+.platGroupBackdrop{position:absolute;inset:0;z-index:20;background:#0009;display:grid;place-items:center}.platGroupDialog{position:relative;width:min(56%,520px);min-height:55%;max-height:78%;overflow:auto;background:#181818;border:1px solid #3b3b3b;border-radius:20px;padding:28px 24px 22px;box-shadow:0 22px 70px #000c;color:#fff}.platGroupClose{position:absolute;right:14px;top:12px;border:0;background:#444;color:#bbb;width:22px;height:22px;border-radius:50%;font-size:17px;line-height:20px}.platGroupTitle{display:flex;flex-direction:column;gap:8px;padding:6px 8px 20px;border-bottom:1px solid #333}.platGroupTitle b{font-size:18px}.platGroupTitle span{font-size:11px;color:#6f76ff}.platGroupRows{display:flex;flex-direction:column}.platGroupRow{width:100%;display:grid;grid-template-columns:26px 1fr 28px;align-items:center;gap:8px;text-align:left;border:0;border-bottom:1px solid #303030;background:transparent;color:#eee;padding:16px 8px}.platGroupRow b{font-size:13px}.platGroupRow i{font-style:normal;font-size:18px;text-align:center;color:#aaa}.platGroupRow.linked i,.platGroupRow.master i{color:#fff}.platGroupRow:disabled{opacity:.38}.platGroupDone{display:block;width:58%;margin:28px auto 0;border:0;border-radius:22px;padding:11px 18px;background:#5157ff;color:#fff;font-weight:700}.platGroupError{font-size:10px;color:#ff8d8d;padding:10px 8px 0}
+@media(max-width:800px){.platGroupDialog{width:72%;padding:22px 18px}.zoneGroupButton{right:3px}}
+
+/* v4.4.47 — shared native multiroom affordance in Standard Style + platForma */
+.zoneCardActions{display:flex;align-items:center;gap:6px}.zoneLinkBtn{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--muted);cursor:pointer}.zoneLinkBtn:hover,.zoneLinkBtn.on{color:var(--text);border-color:var(--text)}.zoneCard.grouped{border-color:var(--text)!important}.zoneGroupButton svg{pointer-events:none}
+
+/* v4.4.49 — native-app-like Multiroom hierarchy */
+.multiroomGroups{display:flex;flex-direction:column;gap:14px;margin-top:12px}.multiroomGroupCard,.multiroomFreeCard{border:1px solid var(--border);border-radius:12px;background:var(--panel2);overflow:hidden}.multiroomGroupCard.selected{border-color:var(--accent)}.multiroomGroupHead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--panel3);border-bottom:1px solid var(--border)}.multiroomGroupHead>div{display:flex;flex-direction:column;gap:3px}.multiroomGroupHead b{font-size:14px}.multiroomGroupHead span,.multiroomGroupHead small{font-size:9px;color:var(--muted)}.multiroomMember{display:grid;grid-template-columns:minmax(180px,1fr) 74px minmax(160px,1fr) auto;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)}.multiroomMember:last-child{border-bottom:0}.multiroomMember.selected{background:color-mix(in srgb,var(--accent) 8%,transparent)}.multiroomMember strong{font-size:9px;letter-spacing:.08em}.multiroomMember>small{font-size:9px;color:var(--muted)}.multiroomGroupAdd{display:flex;gap:7px;flex-wrap:wrap;padding:10px 16px}.platGroupRow b{display:flex;flex-direction:column;gap:2px}.platGroupRow b small{font-size:8px;font-weight:500;letter-spacing:.08em;color:var(--muted)}
+@media(max-width:900px){.multiroomMember{grid-template-columns:1fr auto}.multiroomMember>small,.multiroomMember .multiroomActions{grid-column:1/-1}}
+
+/* v4.4.51 — Devices hierarchy: slave zones live inside their master's card */
+.deviceGroupCard{padding:0!important;overflow:hidden}.deviceGroupCard>div:first-child{padding:11px 12px}.deviceGroupMembers{border-top:1px solid var(--border);background:rgba(255,255,255,.018)}.deviceGroupMember{padding:10px 12px;border-top:1px solid var(--border);cursor:pointer}.deviceGroupMember:first-child{border-top:0}.deviceGroupMember.selected{background:var(--active-bg)}.deviceGroupMemberHead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}.deviceGroupMemberHead>div:first-child{display:flex;flex-direction:column;gap:2px;min-width:0}.deviceGroupMemberHead strong{font-size:11px;color:var(--text)}.deviceGroupMemberHead span{font-size:8px;color:var(--muted);letter-spacing:.05em}.deviceGroupMember .zoneLinkBtn{width:25px;height:25px}.deviceGroupMember .zoneSettingsBtn{width:25px;height:25px;flex-basis:25px}

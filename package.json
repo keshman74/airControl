@@ -1,0 +1,81 @@
+{
+  "name": "aircontrol",
+  "version": "4.4.52",
+  "private": true,
+  "description": "airControl \u2014 multi-platform audio device control. Created by FilmoScope Lab LLC.",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build",
+    "start": "electron .",
+    "dist:mac": "npm run build && electron-builder --mac dmg",
+    "dist:win": "npm run build && electron-builder --win nsis",
+    "dist:dir": "npm run build && electron-builder --dir",
+    "dist:win:x64": "npm run build && electron-builder --win nsis --x64",
+    "dist:win:arm64": "npm run build && electron-builder --win nsis --arm64",
+    "dist:mac:arm64": "npm run build && electron-builder --mac dmg --arm64",
+    "dist:mac:x64": "npm run build && electron-builder --mac dmg --x64"
+  },
+  "dependencies": {
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "music-metadata": "^10.9.0",
+    "smb3-client": "^0.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.1",
+    "vite": "^6.0.1",
+    "wait-on": "^8.0.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.filmoscopelab.aircontrol",
+    "productName": "airControl",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.music",
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "airControl-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "airControl ${version}"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "artifactName": "airControl-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "airControl",
+      "perMachine": false,
+      "allowElevation": false
+    }
+  },
+  "author": "FilmoScope Lab LLC"
+}

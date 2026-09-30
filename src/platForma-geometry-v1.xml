@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<platFormaGeometry version="1.0" source="platForma Icon(3).png">
+  <viewBox width="1382" height="1138" coordinateSystem="image-pixels" origin="top-left"/>
+  <nodes>
+    <node id="top_left" x="465" y="46" nx="0.336468886" ny="0.040421793"/>
+    <node id="top_right" x="917" y="47" nx="0.663531114" ny="0.041300527"/>
+    <node id="center_top" x="688" y="189" nx="0.497829233" ny="0.166080844"/>
+    <node id="outer_left" x="105" y="653" nx="0.075976845" ny="0.573813708"/>
+    <node id="outer_right" x="1274" y="653" nx="0.921852388" ny="0.573813708"/>
+    <node id="inner_left" x="327" y="778" nx="0.236613603" ny="0.683655536"/>
+    <node id="inner_right" x="1051" y="778" nx="0.760492041" ny="0.683655536"/>
+    <node id="bottom_left" x="327" y="1025" nx="0.236613603" ny="0.900702988"/>
+    <node id="bottom_right" x="1051" y="1025" nx="0.760492041" ny="0.900702988"/>
+  </nodes>
+  <edges>
+    <edge id="e01" from="top_left" to="top_right"/>
+    <edge id="e02" from="top_left" to="center_top"/>
+    <edge id="e03" from="top_right" to="center_top"/>
+    <edge id="e04" from="top_left" to="outer_left"/>
+    <edge id="e05" from="top_right" to="outer_right"/>
+    <edge id="e06" from="center_top" to="inner_left"/>
+    <edge id="e07" from="center_top" to="inner_right"/>
+    <edge id="e08" from="outer_left" to="inner_left"/>
+    <edge id="e09" from="outer_right" to="inner_right"/>
+    <edge id="e10" from="inner_left" to="inner_right"/>
+    <edge id="e11" from="outer_left" to="bottom_left"/>
+    <edge id="e12" from="inner_left" to="bottom_left"/>
+    <edge id="e13" from="outer_right" to="bottom_right"/>
+    <edge id="e14" from="inner_right" to="bottom_right"/>
+    <edge id="e15" from="bottom_left" to="bottom_right"/>
+  </edges>
+  <regions>
+    <region id="zones" nodes="top_left center_top inner_left outer_left"/>
+    <region id="player" nodes="center_top inner_right inner_left"/>
+    <region id="sources" nodes="center_top top_right outer_right inner_right"/>
+    <region id="bottom" nodes="inner_left inner_right bottom_right bottom_left"/>
+    <region id="left_lower_chevron" nodes="outer_left inner_left bottom_left"/>
+    <region id="right_lower_chevron" nodes="inner_right outer_right bottom_right"/>
+  </regions>
+</platFormaGeometry>

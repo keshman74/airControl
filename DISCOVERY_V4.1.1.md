@@ -1,0 +1,1 @@
+# Discovery v4.1.1\n\nReal code change: SSDP is now the fast path. Devices discovered by SSDP are probed immediately. The expensive /24 TCP scan (80/443/8000/8443) runs only if SSDP yields no usable devices.\n\nUDP/UDPX discovery is intentionally not invented yet; the next step is to recover the exact Linkplay discovery packet used by the native mobile app.\n

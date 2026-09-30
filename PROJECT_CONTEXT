@@ -1,0 +1,703 @@
+
+## v4.4.50 — Devices group hierarchy
+- Standard Style Devices now renders native multiroom groups as one master card with slave zones nested underneath.
+- Header uses Master +N, matching the established Multiroom/WiiM Home presentation.
+- Slave zones retain individual selection, volume, Multiroom and Settings controls inside the group card.
+- A slave with a resolvable master is no longer duplicated as a top-level Devices card.
+- Group topology uses masterIp/masterUuid, matching the working Multiroom model.
+
+## v4.4.48 — Multiroom topology fix
+- Linkplay Master is derived from live slave master_ip/master_uuid references, never from the selected UI zone.
+- Linkplay Free devices clear stale host state on getStatusEx.
+- platForma group popup resolves the actual Master when opened from Master or Slave and refreshes before opening.
+- Standard Style uses the same topology rule: referenced device = Master, master_ip/master_uuid device = Slave, otherwise Free.
+- Expected verified topology for current hardware state: Patio Master; Office + Гостиная Slaves; Кухня Free.
+airControl PROJECT CONTEXT
+Updated: 2026-09-19
+Current project line: airControl v4.1.0
+
+PURPOSE
+airControl is a desktop controller for Linkplay/WiiM/Arylic-family audio devices (tested/targeted chip families include A31, A33, A97, A98). The current desktop implementation is React + Vite with Electron for macOS and Windows. Mobile is postponed.
+
+ARCHITECTURE / DESIGN RULES
+- Shared React/Vite UI.
+- Shared device API layer and shared EQ / Room EQ algorithms.
+- Electron desktop layer for macOS and Windows.
+- Future mobile layer should be separate (likely Capacitor) for iOS/Android.
+- Do not embed Electron-specific functionality directly in React components.
+- Isolate platform-dependent features: device HTTP/HTTPS transport, microphone/audio permissions, local-network access/discovery, local HTTP media server, and test stubs.
+- Preserve working behavior when adding chip-specific support; especially do not regress A31 while working on A33/A97/A98.
+- App version shown next to the airControl title must match package/ZIP release version. Version text is approximately half the title font size.
+
+CURRENT BUILD / RELEASE
+Current development release: v4.1.0.
+Previous stable baseline before discovery work: v4.0.4.
+Build targets configured:
+- macOS ARM64 DMG
+- Windows x64 NSIS EXE
+- Windows ARM64 NSIS EXE
+Windows installer is per-user (perMachine false / allowElevation false) because all-users install caused problems during testing.
+Windows has platform-specific layout/DPI/font tuning; do not change macOS layout when fixing Windows.
+Icons exist in build/icon.icns and build/icon.ico.
+
+Typical project launch (Mac):
+cd "/Users/lab/AI/airCloudCTRL GPT/airControl vX.Y.Z"
+npm install
+npm run dev
+
+Build commands after dependencies are installed:
+npm run dist:mac:arm64
+npm run dist:win:x64
+npm run dist:win:arm64
+Outputs are under release/.
+
+DEVICE TRANSPORT / IMPORTANT PORTS
+A31 old HTTP API is port 80, NOT 8000:
+  http://DEVICE_IP/httpapi.asp?command=...
+A31 UPnP AVTransport tested at:
+  http://DEVICE_IP:49152/upnp/control/rendertransport1
+A98 testing showed HTTPS API (use TLS; test curl used -k):
+  https://DEVICE_IP/httpapi.asp?command=...
+Local airControl Library HTTP media server has used port 22345.
+Do not hard-code remembered device IPs as permanent identity; DHCP changes them.
+
+CONFIRMED LINKPLAY / ARYLIC COMMANDS
+General commands confirmed on Linkplay/Arylic test hardware:
+- Volume:
+  setPlayerCmd:vol:<0-100>
+- Mute:
+  setPlayerCmd:mute:1
+  setPlayerCmd:mute:0
+- Source examples:
+  setPlayerCmd:switchmode:AUX%20In
+  setPlayerCmd:switchmode:USB%20Disk
+  NOTE: switchmode:LineIn did NOT activate AUX on the tested device.
+- EQ enable examples:
+  eqEnable:0010
+  eqEnable:0001
+- EQ type/info:
+  getEqType
+  getEqInfo:1
+  getEqInfo:2
+- Status:
+  getStatusEx
+- Native preset playback used by Devices presets:
+  setPlayerCmd:playPreset:<1-10>
+
+Known getStatusEx example from CS-8/Arylic tests included:
+ProjectName CS-8; DevFunction Network/AUX In/Bluetooth/USB Disk; DevModel reflects active source; DevVolumeL/R; VolumeState; PlayState; EqType/EqEnable; etc.
+
+A31 STATIC IP / DHCP — CONFIRMED
+A31 old API uses httpapi.asp command syntax.
+Read:
+  getStaticIP
+Observed mode values:
+- wifi:"0" = Static
+- wifi:"1" = DHCP
+- wifi:"-1" = Wi-Fi unavailable/not connected
+- eth:"-1" = Ethernet unavailable
+
+Static -> DHCP confirmed:
+  setDhcp:wifi
+returns OK and actually switches to DHCP.
+
+DHCP -> Static confirmed working command is JSON after setStaticIP:
+  setStaticIP:{"type":"wifi","ip":"192.168.0.7","mask":"255.255.255.0","gateway":"192.168.0.1","dns":[{"service":"192.168.0.1"}]}
+The IP above is only an example from the experiment; use UI-entered values.
+When applying Static, the HTTP request may appear to fail because the device changes IP while the request is open. Treat loss of the old-IP connection as expected and probe the requested new IP after a delay.
+
+Old colon form:
+  setStaticIP:wifi:IP:MASK:GATEWAY:DNS1:DNS2
+may store values / return OK but did NOT reliably switch DHCP -> Static. Do not use it as the primary A31 method.
+setDHCP:0 was unknown.
+setStaticIP:wifi:1 / setStaticIP:1 did not switch mode.
+A31 Static IP from the airControl UI was confirmed working in v4.0.
+
+A98 NETWORK — CONFIRMED / INCOMPLETE
+Tested A98 responded over HTTPS, not HTTP.
+Read:
+  getStaticIpInfo
+Static Wi-Fi command confirmed:
+  setWlanStaticIp:ipAddr=192.168.0.8/24:gateWay=192.168.0.1:dnsServer=192.168.0.1
+The IP is an experiment example only.
+Read health:
+  getNetworkHealth
+with wlanIsStaticIp:1 when static.
+Also confirmed:
+  wlanGetConnectState
+Unknown/not working in tests:
+  setWlanDhcp
+  getStaticIP
+  getNetwork
+WiiM Home can switch A98 Static -> DHCP, but exact HTTPS API command is still unknown. Packet capture showed TLS on 443, so command was encrypted. Possible future route: HTTPS interception/proxy if needed. This is currently lower priority.
+
+A33 / A97
+- A33: Static IP logic worked in earlier airControl versions. Preserve it.
+- A97: hardware is available for testing, but its network API has not yet been fully characterized. Do not claim untested support.
+- Existing A97/A98 test units do not physically have USB ports, so USB testing must use suitable hardware (A31/A33 etc.).
+
+LIBRARY / LOCAL PLAYBACK — CONFIRMED DESIGN
+The Music Browser/Library is intended as a real library, not only a file browser:
+Artists / Albums / Folders / All Tracks, with album artwork.
+This model is for local Mac/Windows files and should later be reusable for SMB/DLNA/network sources.
+
+A31 local Library playback method proven:
+1. airControl serves local audio over its built-in HTTP server (port 22345 in tests).
+2. airControl sends the playable HTTP URL to A31 using UPnP AVTransport SetAVTransportURI.
+3. DIDL-Lite metadata is supplied with title/artist/album.
+4. <upnp:albumArtURI> supplies artwork.
+5. UPnP Play starts playback.
+
+A direct Linkplay setPlayerCmd:play:<URL> could play audio, but did not populate metadata correctly. UPnP SetAVTransportURI + DIDL is the preferred A31 Library mechanism.
+
+Confirmed working Library features from v3.0.7.38-.42 onward:
+- local file playback on A31
+- title/artist/album metadata
+- album artwork
+- playback progress
+- manual Next
+- automatic Next
+- current Library row follows actual current track for manual and automatic transitions
+
+IMPORTANT: Native WiiM Home phone/Windows Next/Previous do not control the airControl local queue because the queue exists in airControl; the A31 only knows the current URI. airControl's own Next and auto-next work.
+
+LIBRARY METADATA OWNERSHIP BUG — IMPORTANT FIX
+Historical bug existed at least back to v3.0.7.44: after playing from airControl Library and then changing to Qobuz/USB/another source, airControl could keep showing stale Library metadata even though A31 and WiiM Home showed the correct current metadata. In some cases UI mixed metadata from a network track with USB playback.
+Root cause: localPlayback/localTrackOverride had priority over polled device metadata and was not relinquished when playback left airControl's Library.
+
+Fix implemented in v4.0.3 and reported by user as working normally:
+- Library metadata override is only valid while airControl owns the current local playback.
+- Clear Library state when the device switches to USB/Bluetooth/AUX/Optical/etc.
+- Clear it when a Network service/URI is external (Qobuz/TIDAL/Spotify/TuneIn/external DLNA etc.).
+- Explicit source switching from airControl should clear Library state immediately.
+- Returning to Library and choosing a track creates Library ownership again.
+DO NOT regress this fix. Do not simply remove localTrackOverride because Library metadata/progress/queue depend on it.
+
+A31 USB
+v3.0.7.35: Library playback progress on A31 confirmed working; preserve implementation.
+v3.0.7.36: A31 USB off-by-one track selection/highlight indexing fixed. Do not regress.
+
+INTERNET RADIO
+v3.0.7.44: Internet Radio uses the same A31 UPnP DIDL approach and correctly displays station information/logo/artwork in WiiM Home.
+v3.0.7.45: Quick radio presets expanded to 10 and shared between Player and Internet Radio.
+
+UI / NAVIGATION
+Device tabs established in v3.0.7.37:
+- Overview
+- Player
+- Internet Radio
+- Library
+- USB
+- Source
+Settings tabs:
+- EQ
+- Network
+- Bluetooth
+- Multiroom
+- System
+Player has Quick radio presets.
+Devices presets 1-10 use native device presets.
+Network cards use the dark UI established around v3.0.7.47.
+
+WINDOWS FIXES
+v4.0.1 introduced Windows-only layout tuning because Windows Segoe UI/font metrics and 125-150% DPI caused cramped columns, wrapped Now Playing metadata and bottom layout problems.
+Windows-only CSS/class should not affect macOS.
+NSIS is configured for per-user install because user confirmed installation succeeded using "install for me only" while all-users installation was problematic.
+Installer may report that airControl cannot be closed if an old airControl.exe process is still running; that is a running-process issue, not a certificate problem.
+
+SIGNING STATUS
+No production signing is configured yet.
+macOS future signing requires Apple Developer Program, Developer ID Application certificate, Hardened Runtime/entitlements, notarization and staple.
+Windows signing requires a separate trusted Code Signing certificate/provider. Apple certificate does not sign Windows builds.
+
+AUTOMATIC DEVICE DISCOVERY — CURRENT v4.1.0 WORK
+Goal: automatically find compatible devices so users do not need to manually know IP addresses and DHCP address changes can be recovered.
+Planned/implemented direction in v4.1.0:
+- automatic discovery at app startup
+- manual "Find Devices" action near Add Device
+- SSDP/UPnP is primary discovery mechanism
+- additional local-subnet probing / known service ports as fallback
+- candidates should be validated as compatible devices (e.g. via getStatusEx or suitable chip-specific API) before adding
+- existing saved devices must not be deleted by discovery
+- matching devices can be refreshed/updated; new compatible devices can be added
+
+CURRENT TEST STATUS FOR v4.1.0
+v4.1.0 has been prepared but real-device discovery still needs validation on the user's network. The requested test is to launch without manually adding devices, wait several seconds, and record which A31/A33/A97/A98 units are discovered and which are missed.
+Do not assume discovery is complete until this real-hardware test passes.
+
+KNOWN HARDWARE / TEST NOTES
+- User has A31, A33, A97 and A98-family hardware available across tests.
+- Device IPs have changed during development; examples included .7, .5, .37 for A31 and .8 for A98. Never use these as fixed defaults.
+- A31 example firmware observed: 4.6.415156, hardware A31, project UP2STREAM_PRO_V4, build a31rakoit, A31_stable_4.6.
+- CS-8/Arylic tests used different addresses and ports. Always inspect current device status instead of assuming historical IP.
+
+FUTURE / NEXT STEPS
+1. Validate v4.1.0 automatic discovery on real A31/A33/A97/A98 devices.
+2. Record discovery response differences by chip family and make validation chip-aware if necessary.
+3. Ensure DHCP IP changes update/reconnect saved devices without creating duplicates. Prefer stable identity such as MAC/UUID where available.
+4. Re-test critical regression matrix after discovery changes:
+   Library -> Qobuz/network service -> USB -> Library;
+   Library progress + manual Next + auto-next;
+   A31 USB indexing/highlight;
+   A31 Static/DHCP;
+   A33 existing network behavior.
+5. Characterize A97 network/static-IP API when needed.
+6. Find A98 Static -> DHCP command only if it becomes a priority.
+7. Later expand Library model to SMB/DLNA/network sources while keeping common Artists/Albums/Folders/All Tracks model.
+8. Production signing/notarization can be added after functionality stabilizes.
+
+WORKING PRACTICES FOR FUTURE DEVELOPMENT
+- Make one focused hardware/API experiment at a time and verify the result before the next.
+- Do not claim a chip/API is supported until tested on real hardware.
+- For each new project version, keep version number synchronized across folder/ZIP/package/UI/VERSION.txt.
+- Preserve proven behavior; avoid broad rewrites around working Library/UPnP/progress/USB/network code.
+
+
+## v4.2.0 — Network Music Sources
+- Based directly on v4.1.1 REAL Discovery FIX; its renderer discovery remains intact.
+- Music Library now separates This Device / UPnP-DLNA / SMB.
+- UPnP/DLNA MediaServers are discovered by SSDP and verified from device-description XML (MediaServer/ContentDirectory).
+- SMB hosts are discovered by reachable TCP/445 and shown separately; browsing/authentication is intentionally not yet implemented.
+- Next: implement ContentDirectory Browse navigation/playback, then SMB share authentication/browsing and unified Artists/Albums/Folders/Tracks model.
+
+
+## v4.2.1 — Hybrid Discovery diagnostic fix
+- SSDP is no longer a gate for device discovery. A33 may not answer SSDP.
+- Every Find Devices run now performs both SSDP candidate probing and active /24 Linkplay/API probing, then merges/deduplicates results.
+- Each discovered device internally carries discoveryMethod: `SSDP + API` or `Linkplay API scan`.
+- Added IPC diagnostic `discovery:ssdpDebug` / preload `debugSsdp()` returning unfiltered SSDP responses for comparison of Simple DLNA, WiiM and Linkplay announcements.
+- Network Music Sources remain: Local, UPnP/DLNA, SMB. Simple DLNA is confirmed visible; WiiM Home server is not yet visible and needs raw SSDP comparison before changing filtering/browsing.
+- Next test: confirm A33 appears via Linkplay API scan even when SSDP misses it; then inspect raw SSDP for WiiM/DLNA behavior.
+
+
+## v4.2.2 — Progressive Discovery
+- Discovery results are streamed from Electron main process to renderer immediately after verification.
+- SSDP and active /24 Linkplay scan run concurrently; SSDP is no longer a blocking first phase.
+- Fast candidate scan uses up to 96 workers and short LAN TCP timeouts, then verifies only candidates through real device API.
+- Devices appear in UI while discovery continues; final result still merges/deduplicates by UUID/IP.
+- Goal: preserve v4.2.1 coverage while reducing first-result latency and total discovery time.
+
+
+## v4.2.3 — DLNA SSDP compatibility diagnostic
+- Preserves v4.2.2 Progressive/Hybrid device discovery.
+- Network Music Sources SSDP no longer relies only on `ST: ssdp:all`.
+- Sends explicit M-SEARCH requests for `upnp:rootdevice`, MediaServer:1/:2 and ContentDirectory:1/:2 in addition to ssdp:all.
+- Also passively listens for SSDP NOTIFY advertisements on multicast 239.255.255.250:1900 during discovery.
+- SSDP diagnostic rows now record whether a packet came from M-SEARCH response or NOTIFY and accept NT as well as ST.
+- Reason: Simple DLNA Server is visible in v4.2.2, while a server visible to native WiiM Home is not. Some servers are selective about ST or rely more heavily on advertisements.
+- Next test: compare UPnP/DLNA server count in v4.2.3. If the WiiM-visible server is still absent, capture/inspect raw SSDP traffic from the native app/server before adding any further protocol guesses.
+
+
+## v4.3.0 — DLNA Music Browser
+- Builds on v4.2.3 expanded SSDP, which user confirmed discovers both Simple DLNA Server and WiiM Home Media Server on the same IP.
+- UPnP/DLNA server cards are clickable.
+- Reads the server ContentDirectory service via SOAP BrowseDirectChildren.
+- Parses DIDL-Lite containers/items, title/artist/album/artwork/resources.
+- Supports hierarchical Back/folder navigation.
+- Audio items can be sent directly to the currently selected airControl player via existing UPnP AVTransport SetAVTransportURI + Play.
+- SMB remains discovery-only; SMB browsing/authentication is a later step.
+- Preserve v4.2.2 progressive Hybrid Discovery and v4.2.3 expanded MediaServer SSDP behavior.
+
+
+## v4.3.1 — DLNA Queue / Next / Auto-Next
+- DLNA playback now creates an airControl-owned queue from playable tracks in the currently browsed ContentDirectory container.
+- Player/global Next and Previous step through that DLNA queue using SetAVTransportURI + Play.
+- Auto-next uses Linkplay polled progress/total with DLNA resource duration as fallback timer.
+- Current DLNA track is highlighted in the browser and DLNA metadata can drive Now Playing.
+- Local Library and DLNA queues remain separate; starting one releases the other.
+
+
+## v4.4.0 — SMB Music Browser
+- Builds on confirmed-working v4.3.1 DLNA Queue/Next/Auto-Next; DLNA code is preserved.
+- SMB hosts discovered on TCP/445 are now clickable in Music Library.
+- Added SMB2/3 share connection form (share/domain/username/password); credentials are passed only to Electron main and are not persisted by the renderer.
+- Added hierarchical SMB folder browsing; UI filters to folders and supported audio extensions.
+- Added SMB audio playback proxy: Electron reads the SMB file and exposes it temporarily through the existing LAN HTTP media server, then sends that HTTP URI to the selected Linkplay device via UPnP AVTransport. This means the player itself never needs SMB credentials.
+- Current v4.4.0 scope requires the share name to be entered (for example Music/Public); automatic SMB share enumeration is not yet implemented.
+- Next: verify SMB authentication/browse/play against the user's real server, then add SMB-owned queue/Next/Previous/Auto-Next and optional share discovery.
+
+
+## v4.4.1 — SMB Connection FIX
+- Replaced legacy `@tracker1/smb2` after a real macOS test crashed inside its NTLM hash code (`substring` on null) and then returned `ECONNRESET`.
+- SMB transport now uses `smb3-client` 0.2.x: SMB 2.1/3.x with NTLMv2, pure TypeScript/JavaScript and no native runtime dependency.
+- `smb:browse` and `smb:play` contain all SMB failures and return friendly errors to the renderer; SMB failures must not escape as uncaught Electron main-process exceptions.
+- Blank SMB username is normalized to `guest` with blank password for guest-share testing.
+- SMB remote paths follow the new client's `share/path` convention.
+- SMB HTTP proxy is full-file streaming in v4.4.1; byte-range seeking is intentionally deferred until verified on the real SMB server.
+- Preserve confirmed v4.3.1 DLNA Browse/Queue/Next/Previous/Auto-Next and v4.2.x Progressive/Hybrid Discovery unchanged.
+- Next test: connect to the real `192.168.0.9 / Music` share and verify directory listing without an Electron crash.
+
+
+## v4.4.2 — SMB Shares + Playback FIX
+- SMB host selection now calls smb3-client listShares() (DCE/RPC srvsvc.NetrShareEnum) and displays shares automatically; administrative shares are hidden. Manual share entry remains as fallback.
+- SMB playback now reads the selected remote audio file through the verified SMB3 session before starting playback and serves it from airControl HTTP proxy with HEAD + byte-range support (206). This maximizes compatibility with Linkplay renderers that probe/seek HTTP resources.
+- Confirmed prior state preserved: v4.4.1 can connect to SMB2/3 and browse a manually entered share; v4.3.1 DLNA queue/Next/Previous/Auto-Next remains stable.
+- Next test: select SMB host -> verify shares auto-appear -> open Music -> play one track. Queue/auto-next for SMB comes only after single-track playback is confirmed.
+
+
+## v4.4.6 — SMB Playback FIX
+- Preserve v4.4.2 SMB discovery, automatic share enumeration and folder browsing.
+- Confirmed real-server issue in v4.4.2: browse/stat work but full `Client.readFile()` playback fails with NTSTATUS `0xC0000098 READ failed`.
+- Playback no longer uses `readFile()`. It uses `smb3-client.createReadStream()` piped to a temporary local cache file.
+- The cached file is served by airControl's proven `/media/` HTTP endpoint, which already supports normal GET/HEAD/byte-range behavior required by Linkplay renderers.
+- DLNA queue/Next/Previous/Auto-Next and Progressive/Hybrid Discovery remain unchanged.
+
+
+## v4.4.6 — SMB IPC lifecycle FIX
+- `smb:play` now acknowledges renderer IPC immediately, so a long SMB stream cannot cause Electron `reply was never sent`.
+- SMB transfer runs as a contained background job with explicit status stages: SMB CONNECT, SMB OPEN, SMB READ, CACHE READY, AVTransport, PLAYING/ERROR.
+- A stream error listener is attached before pipeline; all background errors are caught and reported to renderer.
+- Confirmed working v4.4.2/v4.4.4 SMB discovery, share enumeration and browsing remain unchanged.
+
+
+## v4.4.6 — SMB one-way IPC playback fix
+- Root cause isolation: `ipcRenderer.invoke("smb:play")` could still surface Electron `reply was never sent` even though the handler attempted an immediate acknowledgement.
+- SMB playback command is now deliberately one-way: renderer uses `ipcRenderer.send`, main uses `ipcMain.on`.
+- All asynchronous progress and final errors continue through `smb:play-status`. There is no pending invoke reply to lose.
+- SMB Discovery, automatic share enumeration and browsing are unchanged.
+
+
+## v4.4.7 — SMB playback active-session CREATE fix
+- v4.4.6 removed the Electron IPC failure and exposed the real server error: STATUS_FILE_INVALID (0xC0000098) at SMB CREATE when opening an audio file on a fresh second SMB session.
+- v4.4.7 reuses the already authenticated SMB client/session that successfully performed readdir/stat for the selected share instead of opening a second playback session.
+- Added SMB PREFLIGHT stat on the exact public path before createReadStream; status includes the exact path and expected byte size.
+- The shared browse session is not closed by playback success/error.
+- Discovery, share enumeration, SMB browsing, DLNA queue and local playback are unchanged.
+
+
+## v4.4.8 — SMB Playback OS Bridge FIX
+- Preserves verified smb3-client discovery, share enumeration and browsing.
+- Tested server rejects smb3-client file CREATE/READ with STATUS_FILE_INVALID (0xC0000098); reusing browse session also fails because it is closed.
+- Playback no longer uses smb3-client createReadStream/readFile. macOS uses mount_smbfs and Windows uses native UNC/net use to copy the selected SMB file to airControl temp cache.
+- After CACHE READY, playback uses the existing local HTTP media server and UPnP AVTransport path.
+- SMB Play remains one-way IPC with smb:play-status diagnostics.
+
+
+## v4.4.9 — Zone Cards UI
+- Device list cards redesigned for zone operation: hide chip/model/IP/port.
+- Show zone name, airCloud/airScope, mandatory Online/Offline indicator.
+- Show compact current artwork with title/artist/album/source fallback.
+- Per-zone live volume slider and percentage; controls target zone without selecting it first.
+- Small gear opens Settings/EQ for that zone; card body still opens Overview.
+- SMB playback remains experimental/unverified and was intentionally not changed.
+- About/brand version updated to v4.4.9.
+
+
+## v4.4.11 — Linkplay Radio Artwork Render FIX
+- Built strictly from verified v4.4.9, not v4.4.10.
+- Fix is renderer-only: removed the Linkplay 5-second/finite-duration guard in buildRadioTrackOverride().
+- Reason: old Linkplay can retain stale finite track duration while playing a live Internet Radio stream; the guard dropped the local artwork overlay after ~5 seconds.
+- No extra UPnP/DIDL/SetAVTransportURI/Play commands are sent, preserving v4.4.9 behavior where WiiM Home keeps the station artwork.
+- Zone Cards and Now Playing use the same persistent Radio Browser artwork overlay.
+- SMB playback remains experimental/unconfirmed and unchanged.
+
+
+## v4.4.12 — Artwork Sync & Restore
+- Based on the safe v4.4.11/v4.4.9 radio path; no SetAVTransportURI/Play changes.
+- Zone Cards now background-poll non-selected online devices every 5 s; previously only the selected device was refreshed, so artwork could appear only after clicking through devices.
+- Starting Internet Radio publishes its favicon into the selected device renderer state immediately, so Player and Zone Card can render the same artwork without waiting for polling.
+- On app restart, saved Radio Browser favicon is used as a renderer-only fallback when Linkplay returns no artwork or a stale local /radio-cover URL whose in-memory cache disappeared with the previous app process.
+- UPnP GetPositionInfo remains read-only fallback for native/current Linkplay metadata. No extra playback commands are sent.
+
+
+## v4.4.14 — Linkplay Artwork Diagnostic & Stability FIX
+- Base: v4.4.12.
+- Radio Browser overlay on older Linkplay is no longer evicted by stale finite duration/URI after ~5 seconds.
+- Artwork image load failures retry after 1.5 s instead of permanently falling back until remount.
+- Added renderer console diagnostic `[airControl v4.4.14][Linkplay UPnP metadata]` showing title/artist/album/artwork returned by read-only GetPositionInfo.
+- LIVE badge now requires device online + current play state; Offline devices cannot display LIVE.
+- Zone-card volume slider is disabled while the device is Offline.
+- No SetAVTransportURI/Play changes; Internet Radio transport behavior remains based on the safe v4.4.9 branch.
+
+
+v4.4.14 diagnostic: main-process GetPositionInfo now prints a prominent raw CurrentTrackMetaData/artwork block in Terminal. Automatic selected-device polling skips saved Offline devices to avoid repeated timeout noise; discovery/manual actions remain responsible for reconnecting them. Playback commands unchanged.
+
+
+## v4.4.15 — Unified Artwork State FIX
+- Based on v4.4.14 diagnostic proof that Linkplay GetPositionInfo exposes albumArtURI for already-playing Internet Radio.
+- Linkplay Network playback now reads AVTransport metadata as the read-only artwork source of truth.
+- parseLinkplayStatus prefers current UPnP artwork for Network/DLNA and preserves the last valid cover when a same-track poll is temporarily empty.
+- Radio Browser overlay falls back to device.track artwork instead of masking recovered UPnP artwork with an empty favicon.
+- Player, Overview and Zone Cards therefore consume the same recovered device artwork path.
+- Removed v4.4.14 verbose artwork diagnostic logging. No Play/SetAVTransportURI behavior changed.
+
+
+## v4.4.16 — Radio artwork ownership + version source-of-truth
+- Root cause confirmed in v4.4.15: Radio Browser playback is delivered via UPnP SetAVTransportURI and older Linkplay reports player mode 2 as `DLNA`, while `buildRadioTrackOverride()` and saved-radio artwork restore accepted only `Network`. This rejected the persisted station/favicons after restart even though GetPositionInfo returned albumArtURI.
+- Radio artwork ownership now accepts both `Network` and `DLNA`; no playback/write command was added.
+- Saved Radio Browser favicon restore also accepts both Network and DLNA.
+- Header version is no longer hard-coded (`v4.4.13`); renderer imports package.json and displays `APP_VERSION`, making package.json the version source of truth.
+- Preserve v4.4.15 UPnP albumArtURI parsing and all stable Local Library/DLNA/SMB behavior. SMB playback remains experimental/deferred.
+
+
+## v4.4.17 — Artwork URL resolver
+- Builds on v4.4.16 after v4.4.14 proved GetPositionInfo returns albumArtURI for already-playing Linkplay radio.
+- Electron main now fetches HTTP/HTTPS artwork and returns a data URL to the renderer, avoiding renderer mixed-content/CORS/CDN failures.
+- Stale local /radio-cover URLs are recovered from persisted Radio Browser favicon when available; otherwise a title-only Radio Browser lookup is used as a UI-only fallback.
+- No Play/SetAVTransportURI commands are issued by artwork recovery. Spotify Connect and existing playback ownership paths remain unchanged.
+- UI version remains sourced from package.json.
+
+
+## v4.4.18 A98 artwork restore diagnostic
+- Based on v4.4.17.
+- A98/WiiM Home now always performs read-only AVTransport GetPositionInfo alongside getMetaInfo during refresh.
+- Terminal diagnostic compares getMetaInfo albumArtURI with UPnP albumArtURI/raw metadata.
+- No Play or SetAVTransportURI added.
+- Other Linkplay artwork behavior preserved.
+
+
+## v4.4.19 — Verified discovery + common restore diagnostic
+- Persisted non-demo zones now load as Offline; only real discovery/getStatusEx promotes them Online.
+- Remove from app synchronously rewrites the persistent device list and removes per-device Radio Browser state.
+- Added DEVICE RESTORE v4.4.19 logging in the common refresh/poll path for every verified Online device: hardware/project, source/mode, URI, cached artwork, getMetaInfo artwork, UPnP artwork and final parsed artwork.
+- Diagnostic/read-only change only; no Play/SetAVTransportURI changes.
+
+
+## v4.4.20 — Device pipeline terminal diagnostic
+- v4.4.19 proved renderer console diagnostics were invisible in the user's Terminal because console.log ran in Chromium renderer.
+- Added preload -> Electron main diagnostic IPC so DEVICE PIPELINE v4.4.20 blocks appear in npm run dev Terminal.
+- Diagnostic is placed inside the actual refreshStatus state-update boundary used by successful A31/A97 polling.
+- For A33 diagnostic only, read getMetaInfo and read-only UPnP GetPositionInfo without changing A33 parsed playback state.
+- Logs getPlayerStatus, getMetaInfo, UPnP metadata, cached track and final parsed track for direct A31/A97/A98/A33 comparison.
+- No playback writes added; Spotify and stable playback ownership behavior unchanged.
+- Known observation before this build: after clean Discovery A31/A97 restore radio metadata+artwork, A98 restores metadata but not artwork, A33 restores neither radio metadata nor artwork.
+
+
+## v4.4.21 — A98 getMetaInfo artwork resolver fix
+- v4.4.20 diagnostic confirmed A97 restores radio art via UPnP -> resolver -> data URL.
+- A98/AmlogicA113 (WiiM_Pro_with_gc4a) restores title/artist/album via getMetaInfo, but its albumArtURI remained a raw stale /radio-cover URL and bypassed the resolver.
+- getMetaInfo albumArtURI now passes through the same Electron artwork resolver before parseLinkplayStatus.
+- If an old /radio-cover URL is dead, recovery uses the persisted station favicon or a title-only Radio Browser lookup, then resolves that image.
+- No Play/SetAVTransportURI/write command was added. A31/A97 behavior is preserved.
+- A33 CL-BOPro metadata restore remains unresolved: v4.4.20 showed empty getPlayerStatus/getMetaInfo/UPnP while StatusEx reports http_music.
+
+
+## v4.4.22 — A33 remembered Internet Radio state
+- Based on v4.4.21; preserves the confirmed A98 getMetaInfo artwork resolver fix.
+- ACS2 HTTPS API documents getMetaInfo with Title/Artist/Album/Picture/PlaySource, but real CL-BOPro/A33 testing returns empty getPlayerStatus/getMetaInfo/UPnP metadata while getStatusEx reports StreamMediaName=http_music; the manufacturer's phone app also shows no metadata/artwork in this state.
+- When airControl itself starts a Radio Browser station on A33, that station is marked as airControl-owned and persisted per device.
+- After restart, remembered A33 metadata/artwork is shown only after the zone is verified Online AND current source is Network AND live service is http_music. A saved localStorage entry alone is not sufficient.
+- Native TuneIn/vTuner, source changes, or meaningful native metadata release the remembered overlay, preventing stale station information from masking externally selected playback.
+- No extra playback command is sent during restore; this is UI/state restoration only.
+
+
+## v4.4.23 — Multiroom status discovery stage
+- Added a read-only Settings → Multiroom status view for all currently Online zones.
+- Shows selected-zone role plus every Online zone with device family/hardware, Free/Grouped state and Host/master identity when reported.
+- airCloud/A33 uses existing getStatusEx MultiroomStatus + Host.
+- airScope/Linkplay uses existing getStatusEx group + master_uuid parsed by parseLinkplayStatus.
+- Refresh all re-reads normal device status; no setHost/setSlave/breakUp/disconnect commands are sent in this version.
+- Purpose: verify real group-state semantics on A31, A33, A97 and A98 before enabling Group/Ungroup actions.
+- Preserve v4.4.21 A98 artwork resolver fix and v4.4.22 A33 remembered radio state.
+
+
+## v4.4.24 — Multiroom controls + adaptive artwork layout
+- Based on v4.4.23.
+- Multiroom cards changed from legacy dark-blue styling to the current airControl theme variables.
+- Added real Group/Ungroup controls for verified airCloud/A33 ACS2 API only: setHost, setSlave:host_ip, disconnectSlave, breakUp.
+- Linkplay A31/A97/A98 remain status-only until their native grouping commands are verified; no guessed write commands are sent.
+- Group creation explicitly sets selected A33 as Host before sending setSlave to target A33, then refreshes real device state.
+- Artwork geometry is protected: square artwork never shrinks because of long text. Long Now Playing and Zone Card titles use adaptive font sizing, line clamp and ellipsis.
+- Preserve v4.4.21 A98 artwork resolver and v4.4.22 A33 remembered radio state.
+
+
+## v4.4.25 — Multiroom safety + quiet Terminal
+- Removed the temporary DEVICE PIPELINE v4.4.21 diagnostic IPC/logging, including large base64 artwork dumps. Device polling and metadata/artwork logic are unchanged.
+- Existing Linkplay A31/A97/A98 groups remain readable/status-visible, but unverified Remove/Ungroup controls are no longer rendered for Linkplay devices. They show Status only instead.
+- A33/airCloud ACS2 Group/Ungroup controls remain enabled because those commands are documented/verified.
+- Preserves v4.4.21 A98 artwork resolver, v4.4.22 A33 remembered radio state, v4.4.24 adaptive square artwork/text behavior, DLNA queue, discovery and deferred SMB state.
+
+
+## v4.4.26 — Linkplay Multiroom diagnostic + artwork geometry
+- Added compact Terminal diagnostic containing only Multiroom-relevant raw getStatusEx fields: group, master_uuid, slave, MultiroomStatus, Host, Device, GroupName, uuid.
+- Diagnostic is deduplicated per device and prints only when those values change; no track metadata, artwork URLs or base64 data are logged.
+- It is read-only and sends no grouping command.
+- A31/A97/A98 remain status-only until native Linkplay write commands are verified.
+- Now Playing artwork uses a responsive square grid column with fixed 1:1 aspect ratio; the text column shrinks/truncates instead of clipping or distorting artwork.
+- Preserve v4.4.21 A98 artwork resolver, v4.4.22 A33 remembered radio state, stable DLNA, SMB deferred state, and v4.4.25 Multiroom write safety.
+
+
+v4.4.27 — Internet Radio regression fix + artwork contain
+- Fixed v4.4.26 Internet Radio error `setDevices is not defined`: Player is a child component and must not call App's setDevices setter. Immediate radio artwork/state continues through setRadioNowPlaying; canonical device state remains owned by polling.
+- Now Playing artwork uses object-fit: contain so the complete square artwork is visible without crop.
+- v4.4.26 compact MULTIROOM diagnostic is preserved.
+- Linkplay A31/A97/A98 grouping remains status-only until native commands are verified.
+- Preserve A98 artwork resolver fix (v4.4.21) and A33 remembered radio state (v4.4.22).
+
+
+v4.4.28 — Salvador Style geometry prototype
+- First test implementation of Interface Style: Standard / Salvador Style.
+- Standard remains default and unchanged on startup.
+- Salvador uses the user-supplied platForma icon PNG as the immutable structural skeleton, so no vertices/edges are redrawn or approximated.
+- Left existing area overlays real Zones; central triangle overlays real Player/Now Playing; right existing area overlays Library + Inputs; lower existing area carries selected-zone/volume status for this prototype.
+- Switching styles preserves selected device and playback state because both UIs use the same App state/API.
+- Radical organic/asymmetric layout, curved scrolling metadata, spinning record artwork and radial controls are postponed to later Salvador iterations.
+- v4.4.27 Internet Radio setDevices scope fix and artwork object-fit:contain remain preserved.
+- A33 Internet Radio response/handling issue observed after v4.4.27 is NOT addressed by this Salvador prototype and remains a separate next diagnostic/fix.
+
+
+v4.4.29 — Salvador Style layout refinement
+- Preserves the exact platForma skeleton from v4.4.28; no structural vertices/edges changed.
+- Zones and Sources moved further inside their existing polygonal regions to avoid diagonal-edge collisions.
+- Long labels now shrink/truncate inside their region instead of crossing brand geometry.
+- Central Player content tightened inside the triangle; artwork enlarged while preserving contain behavior.
+- Streams with no finite total duration render as LIVE and do not expose a misleading seek/duration display.
+- Lower selected-zone/volume area compacted.
+- Standard UI and device/API logic intentionally unchanged.
+
+v4.4.30 Salvador Style stepped layout:
+- platForma structural geometry remains unchanged.
+- Zones and Sources controls remain standard horizontal rounded rectangles (no skew/deformation).
+- Buttons are offset progressively as stairs so the lists fit the sloped side planes of the brand form.
+- Standard UI and device/API logic are unchanged in this iteration.
+
+
+## v4.4.32 — Salvador coordinate authority
+- Added public/platForma-geometry-v1.xml as the canonical geometry source (1382x1138 viewBox).
+- Replaced public/platForma-icon.png with the exact reference icon used to derive those coordinates.
+- Salvador stage now uses the same 1382:1138 aspect ratio.
+- Zones/Sources standard horizontal rounded rectangles are laid out from polygon horizontal intersections, not hand-tuned nth-child CSS offsets.
+- Player and Bottom bounds are derived from the named geometry regions.
+- Future geometry tuning must edit platForma-geometry-v1.xml / matching coordinate authority, not scattered CSS percentages.
+- Canonical runtime geometry is imported from src/platForma-geometry-v1.xml via Vite ?raw and parsed with DOMParser. No duplicate hand-tuned coordinate table is used for Salvador placement.
+
+
+v4.4.33 — platForma geometry-axis test
+- Visible alternative UI name changed from Salvador Style to platForma.
+- platForma-geometry-v1.xml remains the single geometry authority.
+- Zones/Sources buttons are no longer visually offset toward either edge: at each button Y, its center X is exactly the midpoint between the two polygon boundary intersections. Width may shrink, center may not drift.
+- Player uses the central triangle axis derived from center_top and the midpoint of inner_left/inner_right. Artwork, metadata, progress/status and transport remain centered/symmetric on this axis.
+- No device/API behavior changed. Standard UI unchanged.
+
+
+## v4.4.34 — platForma geometry-driven centering
+- ZONES/SOURCES headings use the same geometry midpoint axis as side buttons.
+- Player artwork is centered from the main triangle geometry.
+- Play/Pause is centered on the triangle axis; Previous/Next are symmetric.
+- Metadata moved below transport into the wider triangle area.
+- Metadata over 5 words uses a clipped marquee inside geometry-derived width.
+- All placement remains derived from src/platForma-geometry-v1.xml.
+
+
+## v4.4.35 — platForma strict responsive geometry
+- Fixed zone click regression: full-stage Player no longer intercepts side-zone clicks; actual controls own pointer events.
+- Zones/Sources are full-stage XML coordinate hosts, preventing double-local-coordinate offsets.
+- Artwork and all central Player bands use a strict vertical axis from center_top in platForma-geometry-v1.xml.
+- Added container-relative sizing for side buttons, fonts, transport controls and spacing so controls shrink with the platForma viewBox instead of overlapping at small window sizes.
+- Preserves Standard UI/device API behavior.
+
+
+v4.4.36 platForma artwork geometry
+- Artwork outer square is now calculated from platForma-geometry-v1.xml, centered exactly on the main Player bisector.
+- Artwork size is capped by triangle boundaries plus a symmetric safety inset; no independent fixed-pixel artwork sizing in platForma.
+- Legacy .albumArt 105px sizing is overridden inside platForma so Artwork fills the XML-derived square at every scale.
+- Artwork remains 1:1 and uses object-fit: contain.
+- Metadata with 5 words or fewer is explicitly static/centered; marquee remains only for >5 words.
+
+
+## v4.4.37 platForma test
+- SOURCES heading aligned to XML center_top Y, same as ZONES.
+- SOURCES heading toggles Library/Input mode.
+- Library submenu: Radio / This Device / USB / DLNA / SMB; frameless except active state.
+- Input submenu uses selected-device capabilities; frameless except active input.
+- Lower XML rectangle becomes contextual browser/menu for selected Library source.
+- Selected-zone identity/status and volume moved to reserved bottom strip with safety gap.
+- Existing verified playback transports are not changed; Open/context actions route to existing Standard views for full browser operation in this test iteration.
+
+
+v4.4.38 platForma contextual-browser refinement
+- Artwork center is strictly halfway on the XML player bisector between center_top and Play center; size remains geometry-limited.
+- Lower rectangle top edge: Library mode left, contextual tabs centered, Open right.
+- Lower rectangle bottom edge: selected zone/status left, volume right.
+- Middle area is a vertically scrollable row list and cannot overlap either edge strip.
+- Radio populates the contextual list from Radio Browser top stations; other library modes retain their dedicated tabs and hand off to the existing browser until their existing data models are embedded here.
+- Existing playback transports, A98 artwork resolver, A33 remembered-radio behavior, DLNA, USB and SMB implementations are not modified.
+
+
+v4.4.39 platForma source structure + symmetry
+- Right heading is now the mode switch itself: LIBRARY <-> INPUTS.
+- LIBRARY rows: Internet Radio / This Device / USB / DLNA / SMB.
+- INPUTS rows come from selected-device capabilities.
+- Left Zones and right Library/Input controls share five common vertical Y slots; unused slots do not collapse.
+- Active right-side border weight/radius matches active Zone styling.
+- Artwork desired size increased while remaining capped by XML triangle geometry/safety gap and centered halfway between apex and Play.
+- Lower contextual header uses independent left/center/right anchors: mode at left, tabs centered, Open at far right, preventing overlap.
+
+
+v4.4.40 visual correction
+- Removed the old right-side Library card completely.
+- The heading at the former SOURCES position is now LIBRARY or INPUTS and is the only mode switch.
+- Clicking LIBRARY -> INPUTS; clicking INPUTS -> LIBRARY.
+- LIBRARY exposes Internet Radio / This Device / USB / DLNA / SMB directly below.
+- INPUTS exposes selected-device input buttons directly below.
+- Left Zones and right Library/Inputs now use the exact same shared sideYSlots [300,358,416,474,532].
+- Active borders on both sides are identical 2px accent strokes.
+- Artwork legacy viewport sizing is overridden; XML geometry exclusively owns its square and it is centered halfway between apex and Play.
+- Lower contextual header is a non-overlapping 3-column grid: mode left, tabs center, Open far right.
+
+
+v4.4.41 visual fixes
+- Central platForma artwork now uses a broad selected-device artwork fallback chain so an empty narrow state field cannot make it disappear.
+- Artwork remains geometry-owned, centered and object-fit:contain.
+- Lower contextual header is now a hard 4-column grid: selected source | three equal tab cells | spacer | Open.
+- Tabs use minmax(0,1fr), ellipsis and isolated grid cells; they cannot overlap one another or Open at reduced scale.
+
+v4.4.42
+- Corrected Internet Radio rename residue: tab conditions now use Internet Radio, restoring Popular/Search/Favorites.
+- Lower top row uses explicit 3-column layout with Open anchored in the far-right column.
+- Central artwork fallback expanded to current now-playing/track metadata and forced visible above central content.
+
+v4.4.43
+- Compared v4.4.36 and v4.4.42 directly; restored central artwork JSX from v4.4.36.
+- Lower rectangle: source far left, source-specific tabs centered on the same row, Open far right above volume.
+- This Device: Artists / Albums / Folders / All Tracks; other Library sources keep their source-specific tabs.
+
+v4.4.44 Radio Browser
+- Internet Radio tab order changed to Favorites / Search / Popular.
+- Added drill-down navigation state and breadcrumb/back control inside lower contextual rectangle.
+- Station rows are selectable and open a station detail level without leaving platForma.
+- Existing v4.4.43 geometry/artwork/layout is preserved.
+
+
+## v4.4.45 — verified native Linkplay multiroom
+- Integrated hardware-verified A31/A97/A98 WMRM grouping into Settings > Multiroom.
+- Join slave: `multiroom:JoinGroup:IP=<master_ip>:uuid=<master_uuid>` sent to the slave. Verified on A97 joining A31; WiiM Home immediately reflected the native group.
+- Leave slave/group: `multiroom:LeaveGroup`. Verified on A97; WiiM Home immediately showed zones separated.
+- Transport rule is now enforced for recognized Linkplay hardware: A31 / UP2STREAM_PRO_V4 -> HTTP:80; A97/R328 and A98/WiiM/Amlogic -> HTTPS:443 (self-signed cert accepted in Electron).
+- Linkplay role parsing now stores `master_ip` and `master_uuid`; `master_ip` identifies a slave.
+- A33/airCloud ACS2 grouping remains on its existing verified commands. Cross-family A33 <-> Linkplay grouping remains disabled until hardware verification.
+- Preserve v4.4.43 artwork restoration and v4.4.44 platForma/Radio Browser work.
+
+## v4.4.46 — platForma zone-tab native Multiroom
+- Verified Linkplay A31/A97/A98 native multiroom controls are now exposed directly on platForma ZONES rows.
+- Each compatible zone has a Multiroom control on its zone tab. Grouped zones are visibly marked; a master displays `+N` for attached slaves.
+- Multiroom picker is modeled after the native WiiM Home flow: selected master at top, compatible Online zones below, check state for slaves, Done button.
+- Joining uses verified `multiroom:JoinGroup:IP=<master_ip>:uuid=<master_uuid>`; leaving uses verified `multiroom:LeaveGroup`.
+- Transport rule remains strict: A31 HTTP; A97/A98 HTTPS. A33 cross-family grouping remains excluded pending hardware verification.
+
+
+v4.4.48 — Multiroom UI correction
+- Project rule: every new command/control must be integrated in both Standard Style and platForma.
+- platForma group affordance changed from arrow to WiiM Home-like link/paperclip icon.
+- Fixed v4.4.46 bug: group picker was accidentally rendered inside USBPanel, so the platForma arrow appeared to do nothing. Picker now renders inside SalvadorStyle/platForma and opens from zone tabs.
+- Standard Style device cards now show the same link icon and visible native multiroom state; clicking it opens Settings > Multiroom where verified JoinGroup/LeaveGroup controls are available.
+- Grouped Standard cards show master/slave state and master +N member count where known.
+- Preserve verified transport rule: A31 HTTP; A97/A98 HTTPS.
+
+## v4.4.49 — Multiroom group hierarchy UI
+- Standard Style Multiroom is no longer a flat MASTER/SLAVE list. Each resolved native group is rendered as one card: `<Master name> +N`, followed by the Master and its Slave zones, matching the interaction model of the native WiiM Home device list.
+- Free zones are separated into their own section. Unresolved slaves are shown separately instead of being falsely promoted to Master.
+- Selected-zone hero resolves the actual group Master first, so selecting a Slave identifies the same group as selecting its Master.
+- Add-zone controls are scoped to each actual Master group.
+- platForma group popup now labels the master as MASTER and linked members as SLAVE, while preserving the verified join/leave behavior.
+- No changes to verified transport rule: A31 HTTP; A97/A98 HTTPS.
+
+
+## v4.4.52 — platForma grouped zone ordering
+- platForma ZONES now uses the same intuitive topology order as Standard Devices: each resolved Master is followed immediately by its Slave zones; free/unresolved zones follow after groups.
+- Critical brand-geometry rule preserved: the five zone button forms remain bound to the exact existing XML-coordinate slots `[300,358,416,474,532]`; only device identities are reassigned between those fixed slots. No button geometry, vertex, edge, proportion, or coordinate was changed.
+- Master labels show `+N` and MASTER; Slave labels show `↳` and their Master name.
+- Multiroom topology and verified Linkplay commands/transports are unchanged.
+
+
+v4.4.52: Restored Standard Style row-level “Add to group” controls for compatible FREE zones. The selected real master is used when grouped; a selected FREE compatible zone can act as the proposed master. platForma fixed-slot geometry/order behavior from v4.4.51 is preserved and does not own Join/Leave state.

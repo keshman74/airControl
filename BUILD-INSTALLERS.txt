@@ -1,0 +1,52 @@
+airControl v4.4.52 — STABLE MULTIROOM INSTALLER SOURCE
+FilmoScope Lab LLC
+
+BASELINE
+- Version: 4.4.52
+- Status: hardware/user validated working Multiroom baseline.
+- Preserve Standard Style Multiroom Add to group / Remove / Ungroup.
+- Preserve Devices Master + Slaves grouped card behavior.
+- Preserve platForma fixed geometry; only zone data may move between fixed slots.
+
+REQUIREMENTS
+- Node.js + npm
+- macOS build should be performed on macOS.
+- Windows NSIS build is best performed on Windows.
+
+DEVELOPMENT
+  npm install
+  npm run dev
+
+BUILD WEB/ELECTRON APP
+  npm run build
+
+MAC INSTALLER (.dmg)
+Apple Silicon:
+  npm run dist:mac:arm64
+Intel:
+  npm run dist:mac:x64
+Default mac target:
+  npm run dist:mac
+
+WINDOWS INSTALLER (.exe / NSIS)
+x64:
+  npm run dist:win:x64
+ARM64:
+  npm run dist:win:arm64
+Default Windows target:
+  npm run dist:win
+
+OUTPUT
+Installers are written to:
+  release/
+
+EXPECTED NAMES
+macOS:
+  airControl-4.4.52-arm64.dmg
+  airControl-4.4.52-x64.dmg
+Windows:
+  airControl-Setup-4.4.52-x64.exe
+  airControl-Setup-4.4.52-arm64.exe
+
+IMPORTANT
+This folder is the frozen installer-source baseline for v4.4.52. Make future development in a copy/new version, not directly in this baseline.
