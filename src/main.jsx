@@ -345,7 +345,7 @@ function App() {
   };
   const [mode, setMode] = useState("User Mode");
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "dark");
-  const [interfaceStyle, setInterfaceStyle] = useState(() => localStorage.getItem(INTERFACE_STYLE_KEY) || "standard");
+  const [interfaceStyle, setInterfaceStyle] = useState(() => { const saved=localStorage.getItem(INTERFACE_STYLE_KEY); return saved==="salvador"?"platforma":(saved||"standard"); });
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [toast, setToast] = useState("");
@@ -1288,8 +1288,25 @@ function App() {
 
   if (!device) return <div className="bootError">No devices configured.</div>;
 
-  if (interfaceStyle === "salvador") return (
-    <SalvadorStyle
+  if (interfaceStyle === "salvador-new") return (
+    <SalvadorNewStyle
+      devices={devices}
+      device={device}
+      selectedId={selectedId}
+      setSelectedId={setSelectedId}
+      setInterfaceStyle={setInterfaceStyle}
+      run={run}
+      setVolume={setVolume}
+      trackOverride={effectiveTrackOverride}
+      onPrevious={()=>activeQueueStep(-1)}
+      onNext={()=>activeQueueStep(1)}
+      openLibrary={()=>{setInterfaceStyle("standard");setNavSection("Device");setTab("Library")}}
+      openTab={(nextTab)=>{setInterfaceStyle("standard");setNavSection("Device");setTab(nextTab)}}
+    />
+  );
+
+  if (interfaceStyle === "platforma") return (
+    <PlatFormaStyle
       devices={devices}
       device={device}
       selectedId={selectedId}
@@ -1315,8 +1332,11 @@ function App() {
           <div className="brandText"><div className="brandTitleRow"><div className="brandName">airControl</div><div className="brandVersion">v{APP_VERSION}</div></div><div className="brandSub">Multi-platform Audio Device Control</div><div className="brandCredit">Created by FilmoScope Lab LLC</div></div>
         </div>
         <div className="topActions">
-          <button className="salvadorSwitch" onClick={()=>setInterfaceStyle("salvador")} title="Open platForma" aria-label="Open platForma">
+          <button className="salvadorSwitch" onClick={()=>setInterfaceStyle("platforma")} title="Open platForma" aria-label="Open platForma">
             <img src="./platForma-icon.png" alt=""/><span>platForma</span>
+          </button>
+          <button className="salvadorSwitch salvadorColorSwitch" onClick={()=>setInterfaceStyle("salvador-new")} title="Open Salvador Style" aria-label="Open Salvador Style">
+            <span className="salvadorPaletteDot">●</span><span>Salvador</span>
           </button>
           <div className="segmented">
             <button className={mode==="User Mode"?"active":""} onClick={()=>setMode("User Mode")}>User Mode</button>
@@ -1820,7 +1840,68 @@ function platFormaBox(regionName,pad=18){
   return {left:`${l/PLATFORMA_VIEWBOX.width*100}%`,top:`${t/PLATFORMA_VIEWBOX.height*100}%`,width:`${(r-l)/PLATFORMA_VIEWBOX.width*100}%`,height:`${(b-t)/PLATFORMA_VIEWBOX.height*100}%`};
 }
 
-function SalvadorStyle({devices,device,selectedId,setSelectedId,setInterfaceStyle,run,setVolume,trackOverride,onPrevious,onNext,openLibrary,openTab,requestDevice,refreshAll}) {
+function SalvadorNewStyle({devices,device,selectedId,setSelectedId,setInterfaceStyle,run,setVolume,trackOverride,onPrevious,onNext,openLibrary,openTab}) {
+  const track=trackOverride||device?.track||{};
+  const playing=isPlaying(track.playState);
+  const title=track.title||"Nothing playing";
+  const artist=track.artist||"airControl";
+  const album=track.album||"";
+  const volume=Math.max(0,Math.min(100,Number(device?.volume??0)||0));
+  const sources=(sourcesForDevice(device)||SOURCES).slice(0,5);
+  const quick=["Internet Radio","Library","USB","Source"];
+  const zoneColors=["pink","gold","teal","cream","violet"];
+  const fmt=sec=>{const n=Math.max(0,Math.floor(Number(sec)||0));return `${Math.floor(n/60)}:${String(n%60).padStart(2,"0")}`};
+  const total=Math.max(0,Number(track.total)||0), progress=Math.max(0,Number(track.progress)||0);
+  const liquidPalette=["#ff4778","#ff8a1f","#ffc52f","#08a9bb","#00636b","#6b3f9e","#f6e4c8","#d71954"];
+  // FIX2: a small number of very large blobs gives a denser hallucination with far fewer Chromium tiles.
+  const liquidSpots=Array.from({length:42},(_,i)=>{
+    const size=180+((i*137)%460);
+    const x=((i*47)%121)-10, y=((i*73)%121)-10;
+    const dx=((i*29)%19)-9, dy=((i*41)%17)-8;
+    return <i key={i} className={`salvadorLiquidSpot s${i%7}`} style={{
+      "--x":`${x}%`,"--y":`${y}%`,"--sz":`${size}px`,"--dx":`${dx}vw`,"--dy":`${dy}vh`,
+      "--dur":`${22+(i%17)}s`,"--delay":`${-(i%19)}s`,"--c":liquidPalette[i%liquidPalette.length]
+    }}/>;
+  });
+  return <div className="salvadorNewRoot">
+    <div className="salvadorLiquidField" aria-hidden="true">{liquidSpots}</div>
+    <div className="salvadorBlob blobA"/><div className="salvadorBlob blobB"/><div className="salvadorBlob blobC"/>
+    <header className="salvadorNewTop">
+      <div className="salvadorBrand"><span className="salvadorBrandMark">✤</span><b>airControl</b></div>
+      <nav className="salvadorNav">
+        {quick.map(x=><button key={x} onClick={()=>x==="Internet Radio"?openTab?.("Internet Radio"):x==="Library"?openLibrary?.():x==="USB"?openTab?.("USB"):openTab?.("Source")}>{x}</button>)}
+      </nav>
+      <div className="salvadorStylePicker"><span>Salvador Style</span><button onClick={()=>setInterfaceStyle("standard")}>Standard</button><button onClick={()=>setInterfaceStyle("platforma")}>platForma</button></div>
+    </header>
+
+    <main className="salvadorNewGrid">
+      <section className="salvadorZonesNew">
+        {devices.slice(0,5).map((d,i)=><button key={d.id} className={`salvadorZoneCard ${zoneColors[i%zoneColors.length]} ${d.id===selectedId?"active":""}`} onClick={()=>setSelectedId(d.id)}>
+          <span className="salvadorZoneArt">{String(d.name||"Z").slice(0,1).toUpperCase()}</span>
+          <span className="salvadorZoneCopy"><b>{d.name}</b><small>{d.model||deviceTypeOf(d)}</small><i>{d.online?"● online":"○ offline"}</i></span>
+          <span className="salvadorMiniVol">{Math.max(0,Math.min(100,Number(d.volume??0)||0))}%</span>
+        </button>)}
+      </section>
+
+      <section className="salvadorPlayerNew">
+        <div className="salvadorTrackRibbon"><span>{artist}</span><b>{title}</b><span>{album}</span></div>
+        <div className={`salvadorDiscShell ${playing?"isPlaying":"isPaused"}`}><div className="salvadorDisc"><Artwork track={track} device={device}/></div><span className="salvadorDiscHub"/></div>
+        <div className="salvadorPlayerControls"><button onClick={onPrevious}>◀</button><button className="big" onClick={()=>run("setPlayerCmd:onepause")}>{playing?"Ⅱ":"▶"}</button><button onClick={onNext}>▶</button></div>
+        <div className="salvadorSeek">{total>0?<><input type="range" min="0" max={total} value={Math.min(progress,total)} onChange={e=>run(`setPlayerCmd:setplay:${Math.round(Number(e.target.value)||0)}`,{quiet:true})}/><div><span>{fmt(progress)}</span><span>{fmt(total)}</span></div></>:<b>LIVE</b>}</div>
+      </section>
+
+      <aside className="salvadorRightRail">
+        <div className="salvadorSourceBlob"><b>Sources</b>{sources.map(src=><button key={src.value} onClick={()=>run(`setPlayerCmd:switchmode:${src.value}`)}>{src.label}</button>)}</div>
+        <div className="salvadorVolumeBlob"><strong>{volume}%</strong><span>Volume</span><input type="range" min="0" max="100" value={volume} onChange={e=>setVolume(Number(e.target.value))}/></div>
+      </aside>
+
+      <section className="salvadorPresetStrip"><b>Quick Radio Presets</b><div>{[1,2,3,4,5,6].map(n=><button key={n} onClick={()=>run(`setPlayerCmd:playPreset:${n}`)}>{n}</button>)}<button className="plus" onClick={()=>openTab?.("Internet Radio")}>＋</button></div></section>
+      <section className="salvadorDevicePresets"><b>Devices Presets</b><div>{[1,2,3,4,5,6,7,8,9,10].map(n=><button key={n} onClick={()=>run(`setPlayerCmd:playPreset:${n}`)}>{n}</button>)}</div></section>
+    </main>
+  </div>;
+}
+
+function PlatFormaStyle({devices,device,selectedId,setSelectedId,setInterfaceStyle,run,setVolume,trackOverride,onPrevious,onNext,openLibrary,openTab,requestDevice,refreshAll}) {
   const [sourceMode,setSourceMode] = useState("library");
   const [libraryMode,setLibraryMode] = useState("Internet Radio");
   const [contextTab,setContextTab] = useState("Popular");
