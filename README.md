@@ -1,3 +1,17 @@
+# airControl v4.4.54 — A31 shared TCP session
+
+A31 now uses a single persistent TCP/8899 socket per device IP in the Electron process for tone controls and primary player commands (volume, mute, pause/resume, next/previous, native presets). Requests share a 220 ms command queue. Pending volume values coalesce to the latest target. Incoming TCP events update volume/play/mute and A31 EQ controls. A31 selected status reconciliation is reduced from 2 to 10 seconds; background EQ reconciliation from about 700 ms to 10 seconds. HTTP remains available for commands without a verified TCP equivalent and for failed TCP connections. Multiroom, A33, A97/A98 and platForma paths are unchanged.
+
+To run on your Mac after extracting the ZIP:
+
+```bash
+cd '/Users/lab/AI/airCloudCTRL GPT/airControl v4.4.54'
+npm install
+npm run dev
+```
+
+A31 accepts only one TCP/8899 connection from each IP. Close diagnostic TCP probe scripts on the same Mac when running this version. Build and device behavior still need verification on your machine.
+
 ## v3.0.7.45
 Internet Radio on A31 now sends station metadata and artwork to the player via UPnP DIDL-Lite, using the same proven path as Local Library. Station artwork is proxied through the local airControl media server for player compatibility.
 

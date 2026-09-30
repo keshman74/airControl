@@ -183,81 +183,25 @@ async function linkplayAutoProbe({ ip, command = "getStatusEx", preferredProtoco
 ipcMain.handle("linkplay:probe", async (_event, args) => linkplayGet(args || {}));
 ipcMain.handle("linkplay:autoProbe", async (_event, args) => linkplayAutoProbe(args || {}));
 
-// Linkplay A31 MCU passthrough (TCP/8899). The verified A31 protocol wraps
-// ASCII MCU commands in a 20-byte frame: magic, payload length, checksum,
-// eight reserved bytes, then the command itself. Responses use the same frame.
-function makeLinkplayMcuFrame(command = "") {
-  const payload = Buffer.from(String(command), "utf8");
-  const frame = Buffer.alloc(20 + payload.length);
-  frame[0] = 0x18; frame[1] = 0x96; frame[2] = 0x18; frame[3] = 0x20;
-  frame.writeUInt32LE(payload.length, 4);
-  let checksum = 0;
-  for (const byte of payload) checksum = (checksum + byte) >>> 0;
-  frame.writeUInt32LE(checksum, 8);
-  // bytes 12..19 are reserved and remain zero.
-  payload.copy(frame, 20);
-  return frame;
-}
-
-function parseLinkplayMcuFrames(buffer = Buffer.alloc(0)) {
-  const payloads = [];
-  let offset = 0;
-  while (offset + 20 <= buffer.length) {
-    // Resynchronise conservatively if a device ever prefixes noise.
-    if (!(buffer[offset] === 0x18 && buffer[offset+1] === 0x96 && buffer[offset+2] === 0x18 && buffer[offset+3] === 0x20)) {
-      offset += 1;
-      continue;
+// One TCP/8899 session per A31/IP, shared by every renderer request. The
+// device drops an older connection when the same computer opens a second one.
+const {A31Session} = require("./a31-tcp-session.cjs");
+const a31Sessions = new Map();
+function linkplayMcuRequest({ip,command,port=8899,timeout=1100,expectReply=true}={}) {
+  const host=String(ip||"").trim();
+  const cmd=String(command||"");
+  if (!host || !cmd) return Promise.resolve({ok:false,error:"Missing MCU IP or command",payloads:[]});
+  const key=`${host}:${Number(port)||8899}`;
+  if (!a31Sessions.has(key)) a31Sessions.set(key,new A31Session(host,Number(port)||8899,({ip,payload})=>{
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.isDestroyed()) window.webContents.send("linkplay:mcuEvent",{ip,payload});
     }
-    const len = buffer.readUInt32LE(offset + 4);
-    if (len > 1024 * 1024 || offset + 20 + len > buffer.length) break;
-    payloads.push(buffer.subarray(offset + 20, offset + 20 + len).toString("utf8"));
-    offset += 20 + len;
-  }
-  return payloads;
+  }));
+  return a31Sessions.get(key).request({command:cmd,timeout,expectReply});
 }
 
-function linkplayMcuRequest({ ip, command, port = 8899, timeout = 1100, expectReply = true } = {}) {
-  return new Promise((resolve) => {
-    const host = String(ip || "").trim();
-    const cmd = String(command || "");
-    if (!host || !cmd) return resolve({ok:false,error:"Missing Linkplay MCU IP or command",payloads:[]});
-
-    const socket = net.createConnection({host, port:Number(port) || 8899});
-    const chunks = [];
-    let settled = false;
-    let timer = null;
-    const finish = (result) => {
-      if (settled) return;
-      settled = true;
-      if (timer) clearTimeout(timer);
-      try { socket.destroy(); } catch {}
-      resolve(result);
-    };
-    const finishFromChunks = () => {
-      const rawBuffer = Buffer.concat(chunks);
-      const payloads = parseLinkplayMcuFrames(rawBuffer);
-      finish({ok:true,payloads,rawHex:rawBuffer.toString("hex"),command:cmd});
-    };
-
-    socket.on("connect", () => {
-      socket.write(makeLinkplayMcuFrame(cmd), (err) => {
-        if (err) return finish({ok:false,error:err.message,payloads:[],command:cmd});
-        if (!expectReply) {
-          // Give the kernel a brief moment to flush the small frame, matching the
-          // successfully verified manual A31 write tests, then close cleanly.
-          setTimeout(() => finish({ok:true,payloads:[],command:cmd}), 80);
-        }
-      });
-      if (expectReply) timer = setTimeout(finishFromChunks, Math.max(250, Number(timeout) || 1100));
-    });
-    socket.on("data", chunk => chunks.push(Buffer.from(chunk)));
-    socket.on("end", () => expectReply ? finishFromChunks() : finish({ok:true,payloads:[],command:cmd}));
-    socket.on("error", error => finish({ok:false,error:error.message,payloads:[],command:cmd}));
-    socket.setTimeout(Math.max(500, Number(timeout) || 1100) + 500, () => expectReply ? finishFromChunks() : finish({ok:true,payloads:[],command:cmd}));
-  });
-}
-
-ipcMain.handle("linkplay:mcuRequest", async (_event, args) => linkplayMcuRequest(args || {}));
+ipcMain.handle("linkplay:mcuRequest", async (_event,args) => linkplayMcuRequest(args||{}));
+app.on("before-quit",()=>{for(const session of a31Sessions.values())session.close();});
 
 function decodeXmlEntities(value = "") {
   let out = String(value || "");

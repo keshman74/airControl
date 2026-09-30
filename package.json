@@ -1,6 +1,6 @@
 {
   "name": "aircontrol",
-  "version": "4.4.52",
+  "version": "4.4.54",
   "private": true,
   "description": "airControl \u2014 multi-platform audio device control. Created by FilmoScope Lab LLC.",
   "main": "electron/main.cjs",

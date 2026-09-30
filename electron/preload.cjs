@@ -28,6 +28,11 @@ contextBridge.exposeInMainWorld("airCloud", {
   getLinkplayUpnpMetadata: (args) => ipcRenderer.invoke("linkplay:upnpPositionInfo", args),
   resolveArtworkUrl: (args) => ipcRenderer.invoke("artwork:resolve", args),
   linkplayMcuRequest: (args) => ipcRenderer.invoke("linkplay:mcuRequest", args),
+  onLinkplayMcuEvent: (callback) => {
+    const listener = (_event, data) => callback(data);
+    ipcRenderer.on("linkplay:mcuEvent", listener);
+    return () => ipcRenderer.removeListener("linkplay:mcuEvent", listener);
+  },
   getTestAudioInfo: (deviceIp) => ipcRenderer.invoke("test-audio:info", deviceIp),
   requestMicrophonePermission: () => ipcRenderer.invoke("microphone:permission"),
   chooseMusicFolder: () => ipcRenderer.invoke("library:chooseFolder"),

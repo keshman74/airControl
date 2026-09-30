@@ -301,6 +301,30 @@ function linkplayTransportFor(device) {
 async function api(device, instruct) {
   if (!window.airCloud?.request) throw new Error("Desktop bridge unavailable");
   const forced = linkplayTransportFor(device);
+  if (forced?.protocol === "http" && window.airCloud?.linkplayMcuRequest) {
+    const cmd = String(instruct || "");
+    const vol = cmd.match(/^setPlayerCmd:vol:(\d{1,3})$/i);
+    const mute = cmd.match(/^setPlayerCmd:mute:([01])$/i);
+    const preset = cmd.match(/^MCUKeyShortClick:(\d{1,2})$/i);
+    const actions = {
+      "setPlayerCmd:pause":"MCU+PLY-PUS",
+      "setPlayerCmd:resume":"MCU+PLY-PLA",
+      "setPlayerCmd:onepause":String(device.track?.playState||"").toLowerCase()==="play" ? "MCU+PLY-PUS" : "MCU+PLY-PLA",
+      "setPlayerCmd:next":"MCU+PLY+NXT",
+      "setPlayerCmd:prev":"MCU+PLY+PRV"
+    };
+    const tcp = vol && Number(vol[1])<=100 ? `MCU+VOL+${vol[1].padStart(3,"0")}` :
+      mute ? `MCU+MUT+00${mute[1]}` :
+      preset && Number(preset[1])>=1 && Number(preset[1])<=10 ? `MCU+KEY+${preset[1].padStart(3,"0")}` :
+      actions[cmd] || null;
+    if (tcp) {
+      const result = await window.airCloud.linkplayMcuRequest({
+        ip:device.ip,port:8899,command:tcp,expectReply:false,timeout:700
+      });
+      if (result?.ok) return {ok:true,data:"OK",raw:`TCP ${tcp}`,transport:"tcp"};
+      // A31 firmware or network may refuse 8899; preserve known HTTP control.
+    }
+  }
   const protocol = forced?.protocol || device.protocol || "http";
   const port = forced?.port || Number(device.port) || defaultPortFor(deviceTypeOf(device), protocol);
   return window.airCloud.request({
@@ -525,6 +549,32 @@ function App() {
     setDevices(ds => ds.map(d => d.id === id ? {...d, ...patch} : d));
   };
 
+  useEffect(()=>{
+    if (!window.airCloud?.onLinkplayMcuEvent) return;
+    return window.airCloud.onLinkplayMcuEvent(({ip,payload})=>{
+      const text=String(payload||"");
+      const vol=text.match(/^AXX\+VOL\+(\d{3})/);
+      const mute=text.match(/^AXX\+MUT\+00([01])/);
+      const play=text.match(/^AXX\+PLY\+00([01])/);
+      if (!vol && !mute && !play) return;
+      setDevices(ds=>ds.map(d=>{
+        if (d.ip!==ip || linkplayTransportFor(d)?.protocol!=="http") return d;
+        const pending = volumePending.current[d.id];
+        const remoteVolume = vol ? Number(vol[1]) : null;
+        const acceptVolume = vol && (!pending || pending.expires <= Date.now() ||
+            pending.target === remoteVolume);
+        if (acceptVolume && pending?.target === remoteVolume)
+          delete volumePending.current[d.id];
+        return {
+          ...d,
+          ...(acceptVolume ? {volume:remoteVolume} : {}),
+          ...(mute ? {muted:mute[1]==="1"} : {}),
+          ...(play ? {track:{...(d.track||{}),playState:play[1]==="1"?"play":"pause"}} : {})
+        };
+      }));
+    });
+  },[]);
+
   const refreshStatus = async (target=device, {silent=true}={}) => {
     if (!target || target.mock) return;
     if (!silent) setRefreshing(true);
@@ -721,7 +771,7 @@ function App() {
       if (!cancelled) await refreshStatus(device, {silent:true});
     };
     tick();
-    const id = setInterval(tick, 2000);
+    const id = setInterval(tick, linkplayTransportFor(device)?.protocol==="http" ? 10000 : 2000);
     return () => { cancelled = true; clearInterval(id); };
     // Intentionally restart polling only when connection identity changes.
   }, [device?.id, device?.ip, device?.port, device?.protocol, device?.mock]);
@@ -786,7 +836,7 @@ function App() {
       if (instruct === "getStatusEx" && result.data && typeof result.data === "object" && deviceTypeOf(device) === DEVICE_TYPES.AIRCLOUD) {
         patchDevice(device.id, {...parseStatus(result.data, device), online:true});
         setTimeout(() => refreshStatus(device, {silent:true}), 80);
-      } else {
+      } else if (result.transport!=="tcp") {
         setTimeout(() => refreshStatus(device, {silent:true}), 220);
       }
       if (!quiet) notify("Command sent");
@@ -977,8 +1027,10 @@ function App() {
       const command = translateCommand(targetDevice, `setPlayerCmd:vol:${volume}`);
       const result = await api(targetDevice, command);
       if (!result?.ok) throw new Error(result?.raw || "Device returned an error");
-      setTimeout(() => refreshStatus(targetDevice, {silent:true}), 250);
-      setTimeout(() => refreshStatus(targetDevice, {silent:true}), 900);
+      if (result.transport!=="tcp") {
+        setTimeout(() => refreshStatus(targetDevice, {silent:true}), 250);
+        setTimeout(() => refreshStatus(targetDevice, {silent:true}), 900);
+      }
       return result;
     } catch (e) {
       delete volumePending.current[targetDevice.id];
@@ -998,9 +1050,11 @@ function App() {
       delete volumePending.current[device.id];
       setTimeout(() => refreshStatus(device, {silent:true}), 150);
     } else {
-      setTimeout(() => refreshStatus(device, {silent:true}), 250);
-      setTimeout(() => refreshStatus(device, {silent:true}), 900);
-      setTimeout(() => refreshStatus(device, {silent:true}), 1800);
+      if (result.transport!=="tcp") {
+        setTimeout(() => refreshStatus(device, {silent:true}), 250);
+        setTimeout(() => refreshStatus(device, {silent:true}), 900);
+        setTimeout(() => refreshStatus(device, {silent:true}), 1800);
+      }
     }
     return result;
   };
@@ -3355,6 +3409,28 @@ function LinkplayEQ({device,run,setVolume}) {
     return null;
   };
 
+  // A31 publishes changes made by the native app and other controllers on
+  // the same persistent TCP connection. Keep a slow reconciliation cycle for
+  // firmware versions which omit some passthrough notifications.
+  useEffect(()=>{
+    if (!window.airCloud?.onLinkplayMcuEvent) return;
+    return window.airCloud.onLinkplayMcuEvent(({ip,payload})=>{
+      if (ip!==device.ip) return;
+      const text=String(payload||"");
+      const bass=text.match(/EQ:bass:([+-]?\d+)/i);
+      const treble=text.match(/EQ:treble:([+-]?\d+)/i);
+      const mid=text.match(/(?:RAKOIT:)?MID:([+-]?\d+)/i);
+      const vb=text.match(/(?:RAKOIT:)?VBS:([01])(?:&|$)/i);
+      if (bass || treble || mid) setTone(prev=>({
+        ...prev,
+        bass:bass ? Number(bass[1]) : prev.bass,
+        treble:treble ? Number(treble[1]) : prev.treble,
+        mid:mid ? Number(mid[1]) : prev.mid
+      }));
+      if (vb) setAdvanced(prev=>({...prev,virtualBass:vb[1]==="1"}));
+    });
+  },[device.ip]);
+
   const readToneValues = async () => {
     const result=await mcu("MCU+PAS+EQGet&",true);
     return {
@@ -3544,7 +3620,7 @@ function LinkplayEQ({device,run,setVolume}) {
         // Background sync is silent. Manual Read EQ reports errors.
       } finally {
         busyRef.current=false;
-        schedule(700);
+        schedule(10000);
       }
     };
 
