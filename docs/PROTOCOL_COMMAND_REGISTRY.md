@@ -1037,6 +1037,37 @@ Recommended Device Core behavior:
 
 This design is specifically intended to reduce CPU use, network traffic, wakeups and battery consumption in the future iOS/Android airControl while also improving desktop responsiveness.
 
+
+## 13.9 A31 v4.5.0 Core — verified responsive state/update policy
+
+**HW VERIFIED on user's A31 — 2026-10-05.**
+
+The v4.5.0 Core integration established the following working optimization rules:
+
+- React player controls route through **airControl Core**; A31 Play/Pause, Next/Previous, Volume and Mute are hardware-verified through the Core/TCP 8899 path.
+- A31 unsolicited TCP 8899 state is used for Volume, Mute and Play/Pause reconciliation; external changes were observed in airControl practically immediately.
+- Keep heavy/full Linkplay refresh separate from lightweight player reconciliation. A lightweight `getPlayerStatus` refresh can run at about 1 s for title/progress reconciliation while full status/metadata refresh remains much slower (currently about 10 s).
+- Lightweight refresh must preserve existing rich artist/album/artwork until fresh rich metadata for the new track arrives.
+- When the lightweight path detects a real track-title change, trigger the rich metadata refresh immediately rather than waiting for the next periodic full refresh.
+- **React rule:** do not derive the `trackChanged` flag by mutating a local variable from inside a `setDevices(state => ...)` updater and then reading that variable immediately after `setDevices`. React may execute the updater later. Compute the old/new media identity synchronously from the current device snapshot and `getPlayerStatus` result **before** calling `setDevices`, then schedule the rich refresh.
+- After applying this rule, the user hardware-tested track switching between albums and confirmed that artwork updates became **much faster**.
+- A31 Library playback progress and automatic transition to the next local track remain hardware-verified and must be preserved.
+
+### Timing evidence for the artwork path
+
+Direct A31/Qobuz measurements showed that the approximately multi-second artwork lag was not caused by the device/network path:
+
+```text
+getStatusEx          ~0.071 s
+getPlayerStatus      ~0.029 s
+UPnP GetPositionInfo ~0.025 s
+Qobuz artwork fetch  ~0.072 s
+```
+
+A separate live UPnP test showed the new track title and new `albumArtURI` changing together in the same `GetPositionInfo` result. Qobuz artwork downloads were approximately 0.085–0.120 s in repeated tests.
+
+**Canonical implementation rule:** for A31, use push events for state where verified, lightweight polling for reconciliation/progress, and an immediate rich refresh on synchronously detected media-identity change. Do not increase heavy polling frequency to solve artwork responsiveness.
+
 ---
 
 # 14. Unified airControl Device Core target
