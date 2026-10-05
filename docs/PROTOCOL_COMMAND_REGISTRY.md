@@ -20,20 +20,27 @@
 
 | Chip / family | Native ecosystem | Tested examples | Main protocols found |
 |---|---|---|---|
-| A28 | Linkplay | support family identified; individual command coverage not fully re-verified | Linkplay HTTP, UPnP/Linkplay services |
-| A31 | Linkplay / WiiM Home compatible | A31 | Linkplay HTTP, UPnP/SOAP, USB, network settings, local HTTP playback |
+| A28 | Linkplay / WiiM Home compatible | support family identified; individual command coverage not fully re-verified | **HTTP** Linkplay control, UPnP/Linkplay services |
+| A31 | Linkplay / WiiM Home compatible | A31 | **HTTP** Linkplay control, UPnP/SOAP, USB, network settings, local HTTP playback |
 | R328 | Linkplay / WiiM Home compatible | Kitchen, Patio | Linkplay HTTP/UPnP; runtime capability differs by firmware |
-| A97 | Linkplay / WiiM Home compatible | available for playback tests | Linkplay HTTP/UPnP; no physical USB on user's unit |
-| A98 | Linkplay / WiiM Home compatible | Living room | Linkplay HTTP/UPnP; no physical USB on user's unit |
+| A97 | Linkplay / WiiM Home compatible | available for playback tests | **HTTPS** Linkplay control, UPnP; no physical USB on user's unit |
+| A98 / AmlogicA113 | Linkplay / WiiM Home compatible | Living room; device identifies platform as **AmlogicA113** | **HTTPS** Linkplay control, UPnP; no physical USB on user's unit |
 | A33 | **CLOUDYX / iAudioCloud** | CL-BOX Pro 6F72 | UDP discovery :53308, native binary TCP :23040, JSON TCP :1234, ACS2 HTTP/HTTPS, gmrender/DLNA |
 
 ---
 
 # 2. Linkplay family — A28 / A31 / R328 / A97 / A98
 
-## 2.1 Linkplay HTTP command channel
+## 2.1 Linkplay HTTP / HTTPS command channel
 
-Typical form used during testing:
+**Transport rule confirmed for the project's tested chip families:**
+
+- **A28 / A31 → HTTP** control.
+- **A97 / A98 (AmlogicA113) → HTTPS** control.
+
+Do not assume one transport for all Linkplay generations. Select HTTP vs HTTPS from the device/chip family (and preserve runtime discovery/capability checks where available).
+
+Typical HTTP form used during A28/A31-style testing:
 
 ```text
 http://DEVICE_IP/httpapi.asp?command=COMMAND
