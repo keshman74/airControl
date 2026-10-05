@@ -22,8 +22,7 @@
 |---|---|---|---|
 | A28 | Linkplay / WiiM Home compatible | support family identified; individual command coverage not fully re-verified | **HTTP** Linkplay control, UPnP/Linkplay services |
 | A31 | Linkplay / WiiM Home compatible | A31 | **HTTP** Linkplay control, UPnP/SOAP, USB, network settings, local HTTP playback |
-| R328 | Linkplay / WiiM Home compatible | Kitchen, Patio | Linkplay HTTP/UPnP; runtime capability differs by firmware |
-| A97 / ALLWINNER-R328 | Linkplay / WiiM Home compatible | available for playback tests; A97 platform identified as **ALLWINNER-R328** | **HTTPS** Linkplay control, UPnP; no physical USB on user's unit |
+| A97 / ALLWINNER-R328 | Linkplay / WiiM Home compatible | Kitchen, Patio; A97 platform identified as **ALLWINNER-R328** | **HTTPS** Linkplay control, UPnP; runtime capability differs by firmware; no physical USB on user's unit |
 | A98 / AmlogicA113 | Linkplay / WiiM Home compatible | Living room; device identifies platform as **AmlogicA113** | **HTTPS** Linkplay control, UPnP; no physical USB on user's unit |
 | A33 | **CLOUDYX / iAudioCloud** | CL-BOX Pro 6F72 | UDP discovery :53308, native binary TCP :23040, JSON TCP :1234, ACS2 HTTP/HTTPS, gmrender/DLNA |
 
