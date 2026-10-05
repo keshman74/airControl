@@ -747,3 +747,285 @@ DLNA
 SSDP-discovered dynamic gmrender port
 Separate renderer state; do not use as substitute for main iAudioCloud control.
 ```
+
+
+---
+
+# 13. WiiM Home decompilation — Linkplay runtime capabilities and faster control
+
+This section consolidates the WiiM Home reverse-engineering results recovered on 2026-10-02. It is canonical for Linkplay capability negotiation and must remain separate from CLOUDYX A33/iAudioCloud.
+
+## 13.1 Runtime capability discovery
+
+**APK VERIFIED + HW VERIFIED**
+
+WiiM Home does not enable features solely from a hardware-family label such as A31/A97/A98. It discovers the device UPnP services and queries `StreamServicesCapability` (RenderingControl, `InstanceID=0`), then derives service/UI availability from the returned capability/version data.
+
+Recommended airControl flow:
+
+```text
+discover device
+→ discover actual UPnP services/endpoints
+→ query StreamServicesCapability
+→ parse overall StreamCapability + per-service versions/flags
+→ build DeviceCapabilities
+→ enable only supported features
+```
+
+Do not hardcode the service endpoint; discover it from the device description.
+
+### Hardware capability matrix
+
+| Device family | StreamCapability | Qobuz | Important observed capability notes |
+|---|---:|---:|---|
+| A31 | 1.0 | 1.2 | No Samba advertised in tested response |
+| A97 (ALLWINNER-R328) | 1.2 | 1.6 | No Samba advertised; service set is newer than A31 |
+| A98 (AmlogicA113) | 1.6 | 2.2 | Samba 1.0; Plex; SpotifyConnect; TidalConnect; QobuzConnect; Roon; Squeezelite; YouTubeMusic and other newer services advertised |
+
+Selected hardware-observed service sets:
+
+**A31:** Prime 1.1, Tidal 2.1, newTuneIn 1.1, Rhapsody 1.0, Deezer 1.1, Qobuz 1.2, iHeartRadio 1.0, vTuner 1.1.
+
+**A97 (ALLWINNER-R328):** Prime 1.4, Tidal 2.2, newTuneIn 1.1, Rhapsody 1.0, soundmachine 1.1, Deezer 1.1, Qobuz 1.6, iHeartRadio 1.0, Pandora 1.0, vTuner 1.1, CalmRadio 1.1, SoundCloud 1.0.
+
+**A98 (AmlogicA113):** Prime 1.4, Tidal 2.3, newTuneIn 1.2, Rhapsody 1.1, SoundMachine 1.2, Deezer2 1.1, Qobuz 2.2, iHeartRadio/iHeart, Pandora2 1.1, vTuner 1.1, CalmRadio 1.1, SoundCloud 1.3, Plex 1.4, KKBOX 1.0, RadioParadise2 1.0, HotMix 1.0, WiiMRadio 1.0, SpotifyConnect 1.3, TidalConnect 1.0, AVS_MRM 1.0, Squeezelite 1.2, Roon 1.0, Soundtrack 1.0, QobuzConnect 1.0, AudioCast 1.0, Samba 1.0, YouTubeMusic 1.0.
+
+**Architecture rule:** chip/platform is useful for selecting the basic transport (A31 HTTP; A97/A98 HTTPS), but feature availability must be negotiated at runtime because firmware and service-capability versions differ.
+
+## 13.2 Qobuz feature negotiation recovered from WiiM Home
+
+**APK VERIFIED; capability values HW VERIFIED**
+
+WiiM Home reads the Qobuz version from the selected device using the equivalent of:
+
+```text
+getStreamServiceVersion(StreamServicesCapability.StreamServices.QOBUZ)
+```
+
+Recovered feature gates:
+
+| Requirement | Feature |
+|---|---|
+| Qobuz >= 1.5 | Play Next |
+| Qobuz >= 1.6 AND StreamCapability >= 1.2 | Play Last |
+| Qobuz >= 1.8 | new OAuth login flow |
+| Qobuz >= 1.9 | new Artist behavior |
+| Qobuz >= 2.0 + device flag | ReplayGain |
+| Qobuz >= 2.1 | Weekly Queue |
+| Qobuz >= 2.2 | Qobuz Radio |
+
+These versions are confirmed as feature-negotiation inputs. They do **not** by themselves prove that every version uses a different wire transport.
+
+## 13.3 Qobuz playback model
+
+**APK VERIFIED; final wire payload still under investigation**
+
+Recovered chain:
+
+```text
+Qobuz API
+→ QobuzPlayItem
+→ LPPlayMusicList
+→ LPMSPlayData
+→ wp6.F()
+→ eh6.d()
+→ LPPlayMediaData
+→ n42.m0()
+→ device network playback
+```
+
+Important findings:
+
+- the real Qobuz track ID is carried separately as `playItemId`;
+- Qobuz service/search context is retained in the playback model;
+- playlist/queue data is passed through the common playback pipeline;
+- the `trackUrl` seen in this path is context/API data and is **not proven to be a direct audio-stream URL**;
+- the exact final Qobuz PlayQueue `QueueContext` body remains a research item.
+
+Recovered Qobuz API route families include artist, album, playlist, artist radio, album radio, track radio, and search categories.
+
+## 13.4 WiiM PlayQueue service
+
+**APK VERIFIED + service HW VERIFIED**
+
+```text
+Service ID: urn:wiimu-com:serviceId:PlayQueue
+Observed control URL: /upnp/control/PlayQueue1
+```
+
+The endpoint must still be discovered from the device rather than blindly hardcoded.
+
+Recovered actions:
+
+| Action | Known arguments / result | Status |
+|---|---|---|
+| CreateQueue | QueueContext | APK VERIFIED |
+| ReplaceQueue | queue replacement payload | APK VERIFIED |
+| AppendTracksInQueue | append tracks | APK VERIFIED |
+| AppendTracksInQueueEx | extended append | APK VERIFIED |
+| PlayQueueWithIndex | QueueName, Index | APK VERIFIED |
+| BrowseQueue | QueueName → QueueContext | APK VERIFIED |
+| DeleteQueue | queue name/context | APK VERIFIED |
+
+This is a major candidate for replacing controller-side track-by-track orchestration with device-side queue management.
+
+## 13.5 AVTransport / RenderingControl
+
+**APK VERIFIED**
+
+WiiM Home uses UPnP AVTransport callbacks/actions for:
+
+```text
+Play
+Pause
+Previous
+Next
+Seek
+GetMediaInfo
+GetInfoEx
+```
+
+Therefore Linkplay/WiiM control is a **multi-protocol architecture**, not merely the classic HTTP/HTTPS `httpapi.asp` interface.
+
+For airControl, UPnP/event-capable state should be preferred where it reduces repetitive polling, while preserving HTTP/HTTPS fallback for known working controls.
+
+## 13.6 SMB
+
+**APK VERIFIED + capability HW VERIFIED**
+
+WiiM Home contains SMB playback classes/subsystem.
+
+Capability results:
+
+```text
+A31                         Samba not advertised
+A97 (ALLWINNER-R328)       Samba not advertised
+A98 (AmlogicA113)          Samba 1.0 advertised
+```
+
+Presence of SMB code in WiiM Home does not mean every Linkplay device supports native SMB playback. SMB UI/support must be capability-gated.
+
+Recovered WiiM behavior indicates direct `smb://...` resource URLs are represented in PlayQueue rather than proving that the phone proxies the audio stream.
+
+## 13.7 A31 MCU/TCP 8899
+
+**HW/TRAFFIC VERIFIED on A31 only**
+
+A31 `getStatusEx` reports:
+
+```text
+uart_pass_port = 8899
+communication_port = 8819
+```
+
+TCP 8899 was observed carrying bidirectional MCU/UART-like traffic.
+
+Confirmed/observed A31 examples:
+
+| TCP 8899 payload | Meaning / observed response | Evidence |
+|---|---|---|
+| `MCU+PAS+RAKOIT:VER&` | version query; version response observed | HW/TRAFFIC VERIFIED |
+| `MCU+VOL+GET&` | volume query → `AXX+VOL+NNN` | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+RAKOIT:VOL:n&` | volume state/value | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+RAKOIT:MXV&` | MXV query | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+RAKOIT:TRE&` / `TRE:n&` | treble query/state | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+RAKOIT:BAL&` / `BAL:n&` | balance query/state | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+RAKOIT:EQS&` / `EQS:n&` | EQ preset query/state | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+RAKOIT:PEQ&` | preset EQ list | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+RAKOIT:MID:n&` | MID parameter | HW/TRAFFIC VERIFIED |
+| `AXX+SNG+INF{...}&` | asynchronous playback status/current-track event; positions observed in ms | HW/TRAFFIC VERIFIED |
+| `MCU+PAS+EQ:treble:06&` | EQ/treble event/state | HW/TRAFFIC VERIFIED |
+
+airControl source also contains an A31 fast-control mapping for TCP 8899 with HTTP fallback:
+
+```text
+Pause       MCU+PLY-PUS
+Play        MCU+PLY-PLA
+Next        MCU+PLY+NXT
+Previous    MCU+PLY+PRV
+Volume N    MCU+VOL+NNN
+Mute        MCU+MUT+00x
+Preset N    MCU+KEY+NNN
+```
+
+**Important evidence distinction:** the mapping exists in current airControl implementation, but each individual mapped command must retain its own hardware-verification status; do not infer HW VERIFIED merely because the fallback code exists.
+
+`communication_port=8819` is a separate port. Exact commands for 8819 are not currently confirmed and it must not be mixed with 8899.
+
+Physical UART parameters (baud/data/parity/stop/voltage) and direct hardware TX/RX equivalence have not been established.
+
+### 8899 status by platform
+
+| Platform | TCP 8899 MCU status |
+|---|---|
+| A31 | **HW/TRAFFIC VERIFIED** |
+| A97 (ALLWINNER-R328) | **NOT TESTED / UNKNOWN** |
+| A98 (AmlogicA113) | **NOT TESTED / UNKNOWN** |
+
+Do not enable MCU/TCP 8899 on A97/A98 until an actual device test confirms that the port and protocol exist there.
+
+## 13.8 Linkplay transport and optimization policy for airControl
+
+Current canonical transport split:
+
+```text
+A28 / A31                  HTTP control
+A97 (ALLWINNER-R328)       HTTPS control
+A98 (AmlogicA113)          HTTPS control
+```
+
+But HTTP/HTTPS is only one layer. The optimized Linkplay adapter should combine:
+
+```text
+HTTP/HTTPS
++ UPnP AVTransport
++ RenderingControl / StreamServicesCapability
++ PlayQueue
++ event/state channels where verified
++ A31 TCP 8899 where safe and verified
+```
+
+Recommended Device Core behavior:
+
+1. Discover device and actual endpoints once.
+2. Query runtime capabilities once and cache them with a sensible refresh policy.
+3. Build a normalized `DeviceCapabilities` object rather than scattering chip/firmware conditionals through React UI.
+4. Prefer push/event state where available instead of frequent polling.
+5. Keep HTTP/HTTPS as reliable fallback.
+6. Interpolate playback progress locally between authoritative state updates instead of querying the device every second.
+7. Coalesce/throttle rapid volume slider/encoder changes.
+8. Let PlayQueue manage queues on-device instead of sending unnecessary per-track controller operations.
+9. Never enable Samba/Qobuz/new service features merely from the chip name; use capability/version gates.
+
+This design is specifically intended to reduce CPU use, network traffic, wakeups and battery consumption in the future iOS/Android airControl while also improving desktop responsiveness.
+
+---
+
+# 14. Unified airControl Device Core target
+
+The protocol research now supports a common logical API above chip-specific adapters:
+
+```text
+React UI
+   │
+Device State Store
+   │
+airControl Device Core
+   │
+   ├── Linkplay adapter
+   │     A28/A31 → HTTP
+   │     A97 (ALLWINNER-R328) / A98 (AmlogicA113) → HTTPS
+   │     + UPnP / capabilities / PlayQueue
+   │     + A31 TCP 8899 when verified
+   │
+   └── CLOUDYX A33 adapter
+         TCP 1234 event/control
+         TCP 23040 native binary
+         ACS2 for applicable device/multiroom functions
+         DLNA/gmrender only for dedicated DLNA use
+```
+
+UI-facing operations should remain protocol-independent, e.g. `play`, `pause`, `next`, `previous`, `setVolume`, `setMute`, `seek`, source, EQ, queue, presets and grouping.
+
+The adapter chooses the most efficient verified transport for the actual device/firmware/capability set. Electron-specific code should not own protocol semantics so the same Device Core can later be reused by the mobile transport layer.
+
