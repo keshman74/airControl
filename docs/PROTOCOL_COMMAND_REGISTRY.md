@@ -907,62 +907,100 @@ Presence of SMB code in WiiM Home does not mean every Linkplay device supports n
 
 Recovered WiiM behavior indicates direct `smb://...` resource URLs are represented in PlayQueue rather than proving that the phone proxies the audio stream.
 
-## 13.7 A31 MCU/TCP 8899
+## 13.7 A31 MCU/TCP 8899 — Arylic TCP API + UART passthrough
 
-**HW/TRAFFIC VERIFIED on A31 only**
+**HW VERIFIED on user's A31 for this API family; official command catalogue from Arylic documentation.**
 
-A31 `getStatusEx` reports:
+A31 `getStatusEx` reports `uart_pass_port=8899` and `communication_port=8819`. TCP 8899 is a bidirectional persistent socket: the device can push state changes without polling.
+
+### TCP connection rules
+
+- Connect to `<device IP>:8899`.
+- Keep the TCP connection open for future commands and asynchronous messages.
+- Arylic specifies a minimum **200 ms interval** between commands.
+- Arylic specifies **one connection per client IP at a time**.
+- Basic TCP commands/messages are carried in a packet:
+  - header: `18 96 18 20`
+  - payload length: 32-bit little-endian
+  - checksum: sum of payload bytes, 32-bit little-endian
+  - reserved: 8 zero bytes
+  - payload: ASCII command/message
+- Commands normally begin `MCU+`; messages normally begin `AXX+`. PAS passthrough is an exception.
+- Normal payload is often 11 bytes; longer payloads are terminated by `&`.
+
+### TCP API command catalogue
+
+**Device/status:** `MCU+DEV+GET`, `MCU+INF+GET`, `MCU+WWW+GET`, `MCU+USB+GET`.
+
+**Volume/audio:** `MCU+VOL+nnn`, `MCU+VOL+GET`, `MCU+MUT+000/001`, `MCU+MUT+GET`.
+
+**Device control:** `MCU+NAM+SET{name}&`, `MCU+DEV+RST&`, `MCU+FACTORY`.
+
+**Playback:** `MCU+PLY-PUS` pause; `MCU+PLY+PUS` toggle; `MCU+PLY-PLA` resume; `MCU+PLY-STP` stop; `MCU+PLY+NXT` next; `MCU+PLY+PRV` previous; `MCU+PLY+PUQ` resume last playlist.
+
+**Playback mode:** `MCU+PLP+000..004`; `MCU+PLP+GET`. Values: 000 repeat-all, 001 repeat-one, 002 repeat-all+shuffle, 003 shuffle, 004 sequence.
+
+**Presets:** `MCU+KEY+001..010`, `MCU+KEY+NXT`, `MCU+KEY+PRE`; save current supported playlist as preset with `MCU+PRE+nnn`.
+
+**Input/playback state:** `MCU+PLM+GET`. Documented mode IDs include Idle 000, AirPlay 001, DLNA 002, online playlist 010, USB playlist 011, HTTP API 020, Spotify Connect 031, TIDAL Connect 032 (documented A97), LINE-IN 040, Bluetooth 041, Coaxial 045, LINE-IN2 047, HDMI 049, USB DAC 051, External Bluetooth 053, Phono 054, Optical2 056, Coaxial2 057, ARC 058, Slave 099.
+
+**Now playing/status:** `MCU+SONGGET` → short `AXX+SNG+INF{...}&` progress/status; `MCU+MEA+GET` → metadata; `MCU+PINFGET` → richer player state including source/mode, loop, status, progress/duration, title/artist/album, queue count/index, volume and mute. `AXX+SPY+000/001` reports Spotify state.
+
+The TCP API is explicitly bidirectional, so airControl should use unsolicited state messages where reliable instead of polling the same values repeatedly.
+
+### PAS / UART-over-TCP
+
+Arylic documents that newer BP10XX base-board UART commands can be evaluated over TCP by wrapping the raw UART message:
 
 ```text
-uart_pass_port = 8899
-communication_port = 8819
+raw UART:  VOL:50
+TCP 8899: MCU+PAS+RAKOIT:VOL:50&
 ```
 
-TCP 8899 was observed carrying bidirectional MCU/UART-like traffic.
+The A31 captures already confirmed this family, including `MCU+PAS+RAKOIT:VER&`, `VOL`, `MXV`, `TRE`, `BAL`, `EQS`, `PEQ`, `MID` and EQ/state traffic.
 
-Confirmed/observed A31 examples:
+### UART physical connection rules
 
-| TCP 8899 payload | Meaning / observed response | Evidence |
-|---|---|---|
-| `MCU+PAS+RAKOIT:VER&` | version query; version response observed | HW/TRAFFIC VERIFIED |
-| `MCU+VOL+GET&` | volume query → `AXX+VOL+NNN` | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+RAKOIT:VOL:n&` | volume state/value | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+RAKOIT:MXV&` | MXV query | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+RAKOIT:TRE&` / `TRE:n&` | treble query/state | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+RAKOIT:BAL&` / `BAL:n&` | balance query/state | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+RAKOIT:EQS&` / `EQS:n&` | EQ preset query/state | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+RAKOIT:PEQ&` | preset EQ list | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+RAKOIT:MID:n&` | MID parameter | HW/TRAFFIC VERIFIED |
-| `AXX+SNG+INF{...}&` | asynchronous playback status/current-track event; positions observed in ms | HW/TRAFFIC VERIFIED |
-| `MCU+PAS+EQ:treble:06&` | EQ/treble event/state | HW/TRAFFIC VERIFIED |
-
-airControl source also contains an A31 fast-control mapping for TCP 8899 with HTTP fallback:
+Official Arylic UART settings:
 
 ```text
-Pause       MCU+PLY-PUS
-Play        MCU+PLY-PLA
-Next        MCU+PLY+NXT
-Previous    MCU+PLY+PRV
-Volume N    MCU+VOL+NNN
-Mute        MCU+MUT+00x
-Preset N    MCU+KEY+NNN
+115200 baud
+8 data bits
+no parity
+1 stop bit
+no flow control
 ```
 
-**Important evidence distinction:** the mapping exists in current airControl implementation, but each individual mapped command must retain its own hardware-verification status; do not infer HW VERIFIED merely because the fallback code exists.
+UART messages use 3-character command fields separated with `:` and **commands sent over physical UART must terminate with `;`**. State messages may arrive asynchronously without a query. A command without a parameter normally queries/current-controls; with a parameter it normally changes state.
 
-`communication_port=8819` is a separate port. Exact commands for 8819 are not currently confirmed and it must not be mixed with 8899.
+For supported BP10XX devices, most UART commands can be carried over TCP 8899 as:
 
-Physical UART parameters (baud/data/parity/stop/voltage) and direct hardware TX/RX equivalence have not been established.
+```text
+MCU+PAS+RAKOIT:{uart_message}&
+```
 
-### 8899 status by platform
+Do **not** include the physical-UART terminating `;` inside this documented TCP wrapper unless a specific device test proves it necessary; follow the Arylic TCP wrapper form.
 
-| Platform | TCP 8899 MCU status |
-|---|---|
-| A31 | **HW/TRAFFIC VERIFIED** |
-| A97 (ALLWINNER-R328) | **NOT TESTED / UNKNOWN** |
-| A98 (AmlogicA113) | **NOT TESTED / UNKNOWN** |
+### UART/PAS command families
 
-Do not enable MCU/TCP 8899 on A97/A98 until an actual device test confirms that the port and protocol exist there.
+**Device:** `STA`, `SYS:REBOOT`, `SYS:STANDBY`, `SYS:RESET`, `WWW`, `NAM[:hextext]`, `ETH`, `WIF`, `WRS`, `WSS`, `BSS`, `IPA`, `TME`, `COE[:onoff]`, `COD[:pin]`.
+
+**Playback:** `SRC[:source]`, `POP`, `STP`, `NXT`, `PRE`, `PST:preset`, `LPM[:loopmode]`, `BTC[:onoff]`, `PLA`, `CHN`, `MRM`, `TIT`, `ART`, `ALB`, `VND`, `ELP`, `PLI`, `APL[:onoff]`.
+
+Documented `SRC` values include `NET`, `BT`, `USBDAC`, `LINE-IN`, `OPT`, `COAX`, `LINE-IN2`, `OPT2`, `COAX2`, `HDMI`.
+
+**Audio:** `AUD[:onoff]`, `VOL[:volume]`, `MUT[:onoff]`, `BAS[:tone]`, `TRE[:tone]`, `MID[:tone]`, `VBS[:onoff]`, `BAL[:balance]`, `VOF[:volume]`, `VOG[:volume]`, `PEQ`, `EQS[:eqidx]`, `VST[:step]`, `EQE[:onoff]`, `CFE[:onoff]`, `CFF[:frequency]`.
+
+Useful ranges from Arylic: BAS/TRE tone -10..+10 dB; BAL -100..+100; fixed output VOF 0..100; volume step VST 0..10; crossfilter CFF 50..300.
+
+### Evidence / compatibility boundary
+
+- **A31:** TCP 8899 API family is **HW VERIFIED** from the user's previous tests/captures.
+- **A97 (ALLWINNER-R328):** TCP 8899 remains **NOT TESTED / UNKNOWN** in our project. A command documented by Arylic as “A97” is not enough to mark the user's A97 hardware as verified.
+- **A98 (AmlogicA113):** TCP 8899 remains **NOT TESTED / UNKNOWN**.
+- `communication_port=8819` is separate; do not mix it with 8899.
+- Direct physical UART operation on the user's hardware is **DOCUMENTED, NOT YET HW VERIFIED** even though its API can be tunneled through the A31 8899 PAS path.
+- Passthrough functions depend on the base-board/platform and may differ by model even when the Wi-Fi module exposes the same basic TCP API.
 
 ## 13.8 Linkplay transport and optimization policy for airControl
 
