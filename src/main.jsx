@@ -13,6 +13,7 @@ import {
   deviceTypeOf, driverLabel, parseLinkplayStatus, sourcesForDevice, translateCommand
 } from "./services/deviceDrivers.js";
 import platFormaGeometryXml from "./platForma-geometry-v1.xml?raw";
+import airControlCore from "./core/airControlCore.js";
 
 const STORAGE_KEY = "airCloudCTRL.devices.v02";
 const SELECTED_KEY = "airCloudCTRL.selected.v02";
@@ -300,35 +301,61 @@ function linkplayTransportFor(device) {
 
 async function api(device, instruct) {
   if (!window.airCloud?.request) throw new Error("Desktop bridge unavailable");
-  const forced = linkplayTransportFor(device);
-  if (forced?.protocol === "http" && window.airCloud?.linkplayMcuRequest) {
-    const cmd = String(instruct || "");
-    const vol = cmd.match(/^setPlayerCmd:vol:(\d{1,3})$/i);
-    const mute = cmd.match(/^setPlayerCmd:mute:([01])$/i);
-    const preset = cmd.match(/^MCUKeyShortClick:(\d{1,2})$/i);
-    const actions = {
-      "setPlayerCmd:pause":"MCU+PLY-PUS",
-      "setPlayerCmd:resume":"MCU+PLY-PLA",
-      "setPlayerCmd:onepause":String(device.track?.playState||"").toLowerCase()==="play" ? "MCU+PLY-PUS" : "MCU+PLY-PLA",
-      "setPlayerCmd:next":"MCU+PLY+NXT",
-      "setPlayerCmd:prev":"MCU+PLY+PRV"
-    };
-    const tcp = vol && Number(vol[1])<=100 ? `MCU+VOL+${vol[1].padStart(3,"0")}` :
-      mute ? `MCU+MUT+00${mute[1]}` :
-      preset && Number(preset[1])>=1 && Number(preset[1])<=10 ? `MCU+KEY+${preset[1].padStart(3,"0")}` :
-      actions[cmd] || null;
-    if (tcp) {
-      const result = await window.airCloud.linkplayMcuRequest({
-        ip:device.ip,port:8899,command:tcp,expectReply:false,timeout:700
-      });
-      if (result?.ok) return {ok:true,data:"OK",raw:`TCP ${tcp}`,transport:"tcp"};
-      // A31 firmware or network may refuse 8899; preserve known HTTP control.
+
+  /*
+   * v4.5.0 Core migration:
+   * Logical transport controls now go
+   * React -> airControl Core -> device adapter -> Electron transport.
+   *
+   * Every command not listed here deliberately stays on the proven legacy
+   * request path until its adapter implementation is verified.
+   */
+  const cmd = String(instruct || "");
+  const vol = cmd.match(/^setPlayerCmd:vol:(\d{1,3})$/i);
+  const mute = cmd.match(/^setPlayerCmd:mute:([01])$/i);
+  const preset = cmd.match(/^MCUKeyShortClick:(\d{1,2})$/i);
+  const seek = cmd.match(/^setPlayerCmd:seek:(\d+)$/i);
+
+  if (deviceTypeOf(device) === DEVICE_TYPES.AIRSCOPE) {
+    let coreCall = null;
+
+    if (cmd === "setPlayerCmd:pause") coreCall = () => airControlCore.pause(device);
+    else if (cmd === "setPlayerCmd:resume") coreCall = () => airControlCore.play(device);
+    else if (cmd === "setPlayerCmd:onepause") coreCall = () => airControlCore.togglePlay(device);
+    else if (cmd === "setPlayerCmd:next") coreCall = () => airControlCore.next(device);
+    else if (cmd === "setPlayerCmd:prev") coreCall = () => airControlCore.previous(device);
+    else if (vol && Number(vol[1]) <= 100) coreCall = () => airControlCore.setVolume(device, Number(vol[1]));
+    else if (mute) coreCall = () => airControlCore.setMute(device, mute[1] === "1");
+    else if (preset && Number(preset[1]) >= 1 && Number(preset[1]) <= 10) coreCall = () => airControlCore.preset(device, Number(preset[1]));
+    else if (seek) coreCall = () => airControlCore.seek(device, Number(seek[1]));
+
+    if (coreCall) {
+      const result = await coreCall();
+
+      // Compatibility with the existing React refresh policy:
+      // tcp8899 is the new explicit Core transport name.
+      if (result?.transport === "tcp8899") {
+        return {...result, data:result.data ?? "OK", raw:result.raw || `CORE ${result.command || cmd}`};
+      }
+
+      return result;
     }
   }
+
+  /*
+   * Legacy path.
+   * A33 and all not-yet-migrated commands remain unchanged.
+   */
+  const forced = linkplayTransportFor(device);
   const protocol = forced?.protocol || device.protocol || "http";
   const port = forced?.port || Number(device.port) || defaultPortFor(deviceTypeOf(device), protocol);
+
   return window.airCloud.request({
-    ip: device.ip, instruct, apiStyle: apiStyleFor(device), protocol, port
+    ip: device.ip,
+    instruct,
+    apiStyle: apiStyleFor(device),
+    protocol,
+    port
   });
 }
 
@@ -345,7 +372,7 @@ function App() {
   };
   const [mode, setMode] = useState("User Mode");
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || "dark");
-  const [interfaceStyle, setInterfaceStyle] = useState(() => { const saved=localStorage.getItem(INTERFACE_STYLE_KEY); return saved==="salvador"?"platforma":(saved||"standard"); });
+  const [interfaceStyle, setInterfaceStyle] = useState(() => localStorage.getItem(INTERFACE_STYLE_KEY) || "standard");
   const [query, setQuery] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [toast, setToast] = useState("");
@@ -550,26 +577,40 @@ function App() {
   };
 
   useEffect(()=>{
-    if (!window.airCloud?.onLinkplayMcuEvent) return;
-    return window.airCloud.onLinkplayMcuEvent(({ip,payload})=>{
+    return airControlCore.subscribe(({family,transport,ip,payload})=>{
+      if (family!=="linkplay" || transport!=="tcp8899") return;
+
       const text=String(payload||"");
       const vol=text.match(/^AXX\+VOL\+(\d{3})/);
       const mute=text.match(/^AXX\+MUT\+00([01])/);
       const play=text.match(/^AXX\+PLY\+00([01])/);
+
       if (!vol && !mute && !play) return;
+
       setDevices(ds=>ds.map(d=>{
-        if (d.ip!==ip || linkplayTransportFor(d)?.protocol!=="http") return d;
+        if (d.ip!==ip || airControlCore.chip(d)!=="A31") return d;
+
         const pending = volumePending.current[d.id];
         const remoteVolume = vol ? Number(vol[1]) : null;
-        const acceptVolume = vol && (!pending || pending.expires <= Date.now() ||
-            pending.target === remoteVolume);
+        const acceptVolume = vol && (
+          !pending ||
+          pending.expires <= Date.now() ||
+          pending.target === remoteVolume
+        );
+
         if (acceptVolume && pending?.target === remoteVolume)
           delete volumePending.current[d.id];
+
         return {
           ...d,
           ...(acceptVolume ? {volume:remoteVolume} : {}),
           ...(mute ? {muted:mute[1]==="1"} : {}),
-          ...(play ? {track:{...(d.track||{}),playState:play[1]==="1"?"play":"pause"}} : {})
+          ...(play ? {
+            track:{
+              ...(d.track||{}),
+              playState:play[1]==="1"?"play":"pause"
+            }
+          } : {})
         };
       }));
     });
@@ -764,16 +805,124 @@ function App() {
     }
   };
 
+  // v4.5.0 Core: lightweight Linkplay player-state refresh.
+  // Reads only getPlayerStatus: transport state, volume/mute, source,
+  // current track identity and curpos/totlen. Device identity, network,
+  // Multiroom and rich artwork remain owned by the slower full refresh.
+  const refreshPlayerStatus = async (target=device) => {
+    if (!target || target.mock || !target.online) return null;
+    if (deviceTypeOf(target) !== DEVICE_TYPES.AIRSCOPE) return null;
+
+    try {
+      const pr = await api(target, "getPlayerStatus");
+      if (!pr?.ok || !pr.data || typeof pr.data !== "object") return null;
+
+      // Detect the media identity change synchronously from the current
+      // device snapshot. Do not derive this flag as a side effect of the
+      // React setState updater: React may execute that updater later.
+      const currentDevice = devices.find(d => d.id === target.id) || target;
+      const previousTitle = String(currentDevice.track?.title || "").trim();
+      const preview = parseLinkplayStatus({}, pr.data, currentDevice, {}, {});
+      const nextTitle = String(preview.track?.title || "").trim();
+      const trackChanged = Boolean(
+        previousTitle &&
+        nextTitle &&
+        previousTitle !== nextTitle
+      );
+
+      setDevices(ds => ds.map(d => {
+        if (d.id !== target.id) return d;
+
+        const parsed = parseLinkplayStatus({}, pr.data, d, {}, {});
+
+        // Light refresh has no getMetaInfo/UPnP payload. It may discover a new
+        // title immediately, but it must never erase rich metadata/artwork that
+        // belongs to the full refresh. Preserve those fields until rich metadata
+        // for the new track arrives.
+        parsed.track = {
+          ...(parsed.track || {}),
+          artist: parsed.track?.artist || d.track?.artist || "",
+          album: parsed.track?.album || d.track?.album || "",
+          art: parsed.track?.art || d.track?.art || ""
+        };
+
+        const pending = volumePending.current[d.id];
+        if (pending) {
+          const reported = Number(parsed.volume);
+          if (reported === Number(pending.target)) {
+            delete volumePending.current[d.id];
+            parsed.volume = Number(pending.target);
+          } else if (Date.now() < pending.expires) {
+            parsed.volume = d.volume;
+          } else {
+            delete volumePending.current[d.id];
+          }
+        }
+
+        return {...d, ...parsed, online:true};
+      }));
+
+      if (trackChanged) {
+        // Fetch rich metadata immediately after a real media identity change.
+        // This keeps artwork/artist/album responsive without heavy 1 s polling.
+        setTimeout(() => refreshStatus(target, {silent:true}), 120);
+      }
+
+      return pr;
+    } catch {
+      // Light polling is reconciliation only. A transient player-status
+      // failure must not mark the whole device offline.
+      return null;
+    }
+  };
+
   useEffect(() => {
     if (!device || device.mock || !device.online) return;
+
     let cancelled = false;
+    const isA31 = airControlCore.chip(device) === "A31";
+
+    // A31 has verified TCP/8899 push for Volume/Mute/Play.
+    // Keep a lightweight 1 s getPlayerStatus cycle for progress, track identity
+    // and Library auto-advance, while expensive metadata/device reconciliation
+    // remains on the existing 10 s full refresh.
+    if (isA31) {
+      const lightTick = async () => {
+        if (!cancelled) await refreshPlayerStatus(device);
+      };
+      const fullTick = async () => {
+        if (!cancelled) await refreshStatus(device, {silent:true});
+      };
+
+      fullTick();
+      lightTick();
+
+      const lightId = setInterval(lightTick, 1000);
+      const fullId = setInterval(fullTick, 10000);
+
+      return () => {
+        cancelled = true;
+        clearInterval(lightId);
+        clearInterval(fullId);
+      };
+    }
+
+    // Preserve the existing behavior for A97/A98/A33 until their polling
+    // strategy is migrated and hardware-verified separately.
     const tick = async () => {
       if (!cancelled) await refreshStatus(device, {silent:true});
     };
+
     tick();
-    const id = setInterval(tick, linkplayTransportFor(device)?.protocol==="http" ? 10000 : 2000);
-    return () => { cancelled = true; clearInterval(id); };
-    // Intentionally restart polling only when connection identity changes.
+    const id = setInterval(
+      tick,
+      linkplayTransportFor(device)?.protocol === "http" ? 10000 : 1000
+    );
+
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [device?.id, device?.ip, device?.port, device?.protocol, device?.mock]);
 
   // v4.4.12: Zone Cards represent every device, not only the selected one.
@@ -836,7 +985,7 @@ function App() {
       if (instruct === "getStatusEx" && result.data && typeof result.data === "object" && deviceTypeOf(device) === DEVICE_TYPES.AIRCLOUD) {
         patchDevice(device.id, {...parseStatus(result.data, device), online:true});
         setTimeout(() => refreshStatus(device, {silent:true}), 80);
-      } else if (result.transport!=="tcp") {
+      } else if (!["tcp","tcp8899"].includes(result.transport)) {
         setTimeout(() => refreshStatus(device, {silent:true}), 220);
       }
       if (!quiet) notify("Command sent");
@@ -1027,7 +1176,7 @@ function App() {
       const command = translateCommand(targetDevice, `setPlayerCmd:vol:${volume}`);
       const result = await api(targetDevice, command);
       if (!result?.ok) throw new Error(result?.raw || "Device returned an error");
-      if (result.transport!=="tcp") {
+      if (!["tcp","tcp8899"].includes(result.transport)) {
         setTimeout(() => refreshStatus(targetDevice, {silent:true}), 250);
         setTimeout(() => refreshStatus(targetDevice, {silent:true}), 900);
       }
@@ -1050,7 +1199,7 @@ function App() {
       delete volumePending.current[device.id];
       setTimeout(() => refreshStatus(device, {silent:true}), 150);
     } else {
-      if (result.transport!=="tcp") {
+      if (!["tcp","tcp8899"].includes(result.transport)) {
         setTimeout(() => refreshStatus(device, {silent:true}), 250);
         setTimeout(() => refreshStatus(device, {silent:true}), 900);
         setTimeout(() => refreshStatus(device, {silent:true}), 1800);
@@ -1288,25 +1437,8 @@ function App() {
 
   if (!device) return <div className="bootError">No devices configured.</div>;
 
-  if (interfaceStyle === "salvador-new") return (
-    <SalvadorNewStyle
-      devices={devices}
-      device={device}
-      selectedId={selectedId}
-      setSelectedId={setSelectedId}
-      setInterfaceStyle={setInterfaceStyle}
-      run={run}
-      setVolume={setVolume}
-      trackOverride={effectiveTrackOverride}
-      onPrevious={()=>activeQueueStep(-1)}
-      onNext={()=>activeQueueStep(1)}
-      openLibrary={()=>{setInterfaceStyle("standard");setNavSection("Device");setTab("Library")}}
-      openTab={(nextTab)=>{setInterfaceStyle("standard");setNavSection("Device");setTab(nextTab)}}
-    />
-  );
-
-  if (interfaceStyle === "platforma") return (
-    <PlatFormaStyle
+  if (interfaceStyle === "salvador") return (
+    <SalvadorStyle
       devices={devices}
       device={device}
       selectedId={selectedId}
@@ -1332,11 +1464,8 @@ function App() {
           <div className="brandText"><div className="brandTitleRow"><div className="brandName">airControl</div><div className="brandVersion">v{APP_VERSION}</div></div><div className="brandSub">Multi-platform Audio Device Control</div><div className="brandCredit">Created by FilmoScope Lab LLC</div></div>
         </div>
         <div className="topActions">
-          <button className="salvadorSwitch" onClick={()=>setInterfaceStyle("platforma")} title="Open platForma" aria-label="Open platForma">
+          <button className="salvadorSwitch" onClick={()=>setInterfaceStyle("salvador")} title="Open platForma" aria-label="Open platForma">
             <img src="./platForma-icon.png" alt=""/><span>platForma</span>
-          </button>
-          <button className="salvadorSwitch salvadorColorSwitch" onClick={()=>setInterfaceStyle("salvador-new")} title="Open Salvador Style" aria-label="Open Salvador Style">
-            <span className="salvadorPaletteDot">●</span><span>Salvador</span>
           </button>
           <div className="segmented">
             <button className={mode==="User Mode"?"active":""} onClick={()=>setMode("User Mode")}>User Mode</button>
@@ -1840,68 +1969,7 @@ function platFormaBox(regionName,pad=18){
   return {left:`${l/PLATFORMA_VIEWBOX.width*100}%`,top:`${t/PLATFORMA_VIEWBOX.height*100}%`,width:`${(r-l)/PLATFORMA_VIEWBOX.width*100}%`,height:`${(b-t)/PLATFORMA_VIEWBOX.height*100}%`};
 }
 
-function SalvadorNewStyle({devices,device,selectedId,setSelectedId,setInterfaceStyle,run,setVolume,trackOverride,onPrevious,onNext,openLibrary,openTab}) {
-  const track=trackOverride||device?.track||{};
-  const playing=isPlaying(track.playState);
-  const title=track.title||"Nothing playing";
-  const artist=track.artist||"airControl";
-  const album=track.album||"";
-  const volume=Math.max(0,Math.min(100,Number(device?.volume??0)||0));
-  const sources=(sourcesForDevice(device)||SOURCES).slice(0,5);
-  const quick=["Internet Radio","Library","USB","Source"];
-  const zoneColors=["pink","gold","teal","cream","violet"];
-  const fmt=sec=>{const n=Math.max(0,Math.floor(Number(sec)||0));return `${Math.floor(n/60)}:${String(n%60).padStart(2,"0")}`};
-  const total=Math.max(0,Number(track.total)||0), progress=Math.max(0,Number(track.progress)||0);
-  const liquidPalette=["#ff4778","#ff8a1f","#ffc52f","#08a9bb","#00636b","#6b3f9e","#f6e4c8","#d71954"];
-  // FIX2: a small number of very large blobs gives a denser hallucination with far fewer Chromium tiles.
-  const liquidSpots=Array.from({length:42},(_,i)=>{
-    const size=180+((i*137)%460);
-    const x=((i*47)%121)-10, y=((i*73)%121)-10;
-    const dx=((i*29)%19)-9, dy=((i*41)%17)-8;
-    return <i key={i} className={`salvadorLiquidSpot s${i%7}`} style={{
-      "--x":`${x}%`,"--y":`${y}%`,"--sz":`${size}px`,"--dx":`${dx}vw`,"--dy":`${dy}vh`,
-      "--dur":`${22+(i%17)}s`,"--delay":`${-(i%19)}s`,"--c":liquidPalette[i%liquidPalette.length]
-    }}/>;
-  });
-  return <div className="salvadorNewRoot">
-    <div className="salvadorLiquidField" aria-hidden="true">{liquidSpots}</div>
-    <div className="salvadorBlob blobA"/><div className="salvadorBlob blobB"/><div className="salvadorBlob blobC"/>
-    <header className="salvadorNewTop">
-      <div className="salvadorBrand"><span className="salvadorBrandMark">✤</span><b>airControl</b></div>
-      <nav className="salvadorNav">
-        {quick.map(x=><button key={x} onClick={()=>x==="Internet Radio"?openTab?.("Internet Radio"):x==="Library"?openLibrary?.():x==="USB"?openTab?.("USB"):openTab?.("Source")}>{x}</button>)}
-      </nav>
-      <div className="salvadorStylePicker"><span>Salvador Style</span><button onClick={()=>setInterfaceStyle("standard")}>Standard</button><button onClick={()=>setInterfaceStyle("platforma")}>platForma</button></div>
-    </header>
-
-    <main className="salvadorNewGrid">
-      <section className="salvadorZonesNew">
-        {devices.slice(0,5).map((d,i)=><button key={d.id} className={`salvadorZoneCard ${zoneColors[i%zoneColors.length]} ${d.id===selectedId?"active":""}`} onClick={()=>setSelectedId(d.id)}>
-          <span className="salvadorZoneArt">{String(d.name||"Z").slice(0,1).toUpperCase()}</span>
-          <span className="salvadorZoneCopy"><b>{d.name}</b><small>{d.model||deviceTypeOf(d)}</small><i>{d.online?"● online":"○ offline"}</i></span>
-          <span className="salvadorMiniVol">{Math.max(0,Math.min(100,Number(d.volume??0)||0))}%</span>
-        </button>)}
-      </section>
-
-      <section className="salvadorPlayerNew">
-        <div className="salvadorTrackRibbon"><span>{artist}</span><b>{title}</b><span>{album}</span></div>
-        <div className={`salvadorDiscShell ${playing?"isPlaying":"isPaused"}`}><div className="salvadorDisc"><Artwork track={track} device={device}/></div><span className="salvadorDiscHub"/></div>
-        <div className="salvadorPlayerControls"><button onClick={onPrevious}>◀</button><button className="big" onClick={()=>run("setPlayerCmd:onepause")}>{playing?"Ⅱ":"▶"}</button><button onClick={onNext}>▶</button></div>
-        <div className="salvadorSeek">{total>0?<><input type="range" min="0" max={total} value={Math.min(progress,total)} onChange={e=>run(`setPlayerCmd:setplay:${Math.round(Number(e.target.value)||0)}`,{quiet:true})}/><div><span>{fmt(progress)}</span><span>{fmt(total)}</span></div></>:<b>LIVE</b>}</div>
-      </section>
-
-      <aside className="salvadorRightRail">
-        <div className="salvadorSourceBlob"><b>Sources</b>{sources.map(src=><button key={src.value} onClick={()=>run(`setPlayerCmd:switchmode:${src.value}`)}>{src.label}</button>)}</div>
-        <div className="salvadorVolumeBlob"><strong>{volume}%</strong><span>Volume</span><input type="range" min="0" max="100" value={volume} onChange={e=>setVolume(Number(e.target.value))}/></div>
-      </aside>
-
-      <section className="salvadorPresetStrip"><b>Quick Radio Presets</b><div>{[1,2,3,4,5,6].map(n=><button key={n} onClick={()=>run(`setPlayerCmd:playPreset:${n}`)}>{n}</button>)}<button className="plus" onClick={()=>openTab?.("Internet Radio")}>＋</button></div></section>
-      <section className="salvadorDevicePresets"><b>Devices Presets</b><div>{[1,2,3,4,5,6,7,8,9,10].map(n=><button key={n} onClick={()=>run(`setPlayerCmd:playPreset:${n}`)}>{n}</button>)}</div></section>
-    </main>
-  </div>;
-}
-
-function PlatFormaStyle({devices,device,selectedId,setSelectedId,setInterfaceStyle,run,setVolume,trackOverride,onPrevious,onNext,openLibrary,openTab,requestDevice,refreshAll}) {
+function SalvadorStyle({devices,device,selectedId,setSelectedId,setInterfaceStyle,run,setVolume,trackOverride,onPrevious,onNext,openLibrary,openTab,requestDevice,refreshAll}) {
   const [sourceMode,setSourceMode] = useState("library");
   const [libraryMode,setLibraryMode] = useState("Internet Radio");
   const [contextTab,setContextTab] = useState("Popular");
@@ -2140,6 +2208,7 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
   const [radioStations,setRadioStations] = useState(Array.isArray(initialRadioBrowserState.stations) ? initialRadioBrowserState.stations : []);
   const [radioLoading,setRadioLoading] = useState(false);
   const [radioError,setRadioError] = useState(initialRadioBrowserState.error || "");
+  const [radioDebug,setRadioDebug] = useState(null);
   const [radioTitle,setRadioTitle] = useState(initialRadioBrowserState.title || "Popular stations");
   const [playingRadioId,setPlayingRadioId] = useState("");
   const [radioPlayingBusy,setRadioPlayingBusy] = useState("");
@@ -2265,7 +2334,23 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
     const stationKey = station.id || station.url || "";
     setRadioPlayingBusy(stationKey);
     setRadioError("");
+    setRadioDebug(null);
+    let debugInfo = {
+      station: {
+        name: station?.name || "", id: station?.id || "", url: station?.url || "", originalUrl: station?.originalUrl || "",
+        homepage: station?.homepage || "", codec: station?.codec || "", bitrate: station?.bitrate || "",
+        favicon: station?.favicon || "", country: station?.country || "", language: station?.language || "", tags: station?.tags || ""
+      },
+      device: {name: device?.name || "", ip: device?.ip || "", type: deviceTypeOf(device)}
+    };
     try {
+      if (deviceTypeOf(device) === DEVICE_TYPES.AIRCLOUD && window.airCloud?.playRadioStationA33) {
+        const native = await window.airCloud.playRadioStationA33({deviceIp:device.ip,station});
+        if (!native?.ok) throw new Error(native?.error || "A33 native radio playback failed");
+        const selected={...station,url:native.url||station.url};
+        setPlayingRadioId(stationKey); setRadioNowPlaying(selected);
+        markCompatibility(station,"verified",{url:selected.url,native:true}); countRadioClick(station.id); return;
+      }
       await run("setPlayerCmd:switchmode:Network", {quiet:true});
       await new Promise(r=>setTimeout(r,140));
 
@@ -2286,12 +2371,15 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
       addCandidate(station.url, station);
       addCandidate(station.originalUrl, station);
       alternatives.forEach(alt=>{ addCandidate(alt.url,alt); addCandidate(alt.originalUrl,alt); });
+      debugInfo.alternatives = alternatives.slice(0,16).map(x=>({id:x?.id||"",name:x?.name||"",url:x?.url||"",originalUrl:x?.originalUrl||"",codec:x?.codec||"",homepage:x?.homepage||""}));
+      debugInfo.candidates = urlCandidates.slice(0,12).map(x=>x.url);
 
       let accepted = null;
       let verified = false;
       let lastReply = "";
       for (const candidate of urlCandidates.slice(0,12)) {
         const result = await tryRadioUrl(candidate.url);
+        debugInfo.attempts = [...(debugInfo.attempts||[]), {url:candidate.url, ok:Boolean(result.ok), verified:Boolean(result.verified), reply:result.reply||""}];
         lastReply = result.reply || lastReply;
         if (result.ok) {
           accepted = candidate;
@@ -2330,6 +2418,8 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
       markCompatibility(station, verified ? "verified" : "accepted", {url:accepted.url});
       countRadioClick(accepted.sourceStation?.id || station.id);
     } catch(e) {
+      debugInfo.error = e?.message || String(e);
+      setRadioDebug(debugInfo);
       setRadioError(`Could not play ${station.name}: ${e.message}`);
     } finally {
       setRadioPlayingBusy("");
@@ -2413,6 +2503,7 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
       </div>
       <div className="radioSectionHead"><b>{radioTitle}</b><span>{radioStations.length} station{radioStations.length===1?"":"s"}</span></div>
       {radioError && <div className="radioError">{radioError}</div>}
+
       {radioLoading && !radioStations.length ? <div className="radioEmpty">Loading Internet Radio directory…</div> :
         <div className="radioStationList">
           {radioStations.map(station=>{
@@ -4320,11 +4411,48 @@ function MultiroomPanel({device,devices,refreshAll,requestDevice}){
   </Panel></div>
 }
 
+function QobuzBrowser({device}) {
+  const KEY="airControl.qobuz.session.v4456";
+  const initial=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"null")||{appId:"304027809",token:""}}catch{return {appId:"304027809",token:""}}};
+  const [auth,setAuth]=useState(initial); const [query,setQuery]=useState("Pink Floyd"); const [loading,setLoading]=useState(false); const [error,setError]=useState("");
+  const [results,setResults]=useState(null); const [album,setAlbum]=useState(null); const [playlist,setPlaylist]=useState(null); const [playingId,setPlayingId]=useState(""); const [mode,setMode]=useState("search"); const [library,setLibrary]=useState(null); const [profile,setProfile]=useState(null);
+  useEffect(()=>{try{localStorage.setItem(KEY,JSON.stringify(auth))}catch{}},[auth]);
+  const connect=async()=>{setError("");const r=await window.airCloud?.qobuzConnect?.();if(r?.ok){const next={appId:r.appId||"304027809",token:r.token};setAuth(next);const p=await window.airCloud?.qobuzProfile?.(next);if(p?.ok)setProfile(p.data)}else if(!r?.canceled)setError(r?.error||"Could not connect Qobuz")};
+  const importSession=async()=>{setError("");const r=await window.airCloud?.qobuzImportSession?.();if(r?.ok){setAuth({appId:r.appId||"304027809",token:r.token});}else if(!r?.canceled)setError(r?.error||"Could not import Qobuz session")};
+  const disconnect=()=>{setAuth({appId:"304027809",token:""});setProfile(null);setResults(null);setLibrary(null);setAlbum(null);setPlaylist(null)};
+  const search=async()=>{if(!auth.token)return setError("Connect Qobuz first.");if(!query.trim())return;setMode("search");setLoading(true);setError("");setAlbum(null);setPlaylist(null);try{const r=await window.airCloud?.qobuzSearch?.({appId:auth.appId,token:auth.token,query:query.trim(),limit:20});if(!r?.ok)throw new Error(r?.error||"Qobuz search failed");setResults(r.data)}catch(e){setError(e.message||String(e))}finally{setLoading(false)}};
+  const openAlbum=async a=>{setLoading(true);setError("");setPlaylist(null);try{const r=await window.airCloud?.qobuzAlbum?.({appId:auth.appId,token:auth.token,albumId:a.id});if(!r?.ok)throw new Error(r?.error||"Album request failed");setAlbum(r.data)}catch(e){setError(e.message||String(e))}finally{setLoading(false)}};
+  const openPlaylist=async p=>{setLoading(true);setError("");setAlbum(null);try{const r=await window.airCloud?.qobuzPlaylist?.({appId:auth.appId,token:auth.token,playlistId:p.id});if(!r?.ok)throw new Error(r?.error||"Playlist request failed");setPlaylist(r.data)}catch(e){setError(e.message||String(e))}finally{setLoading(false)}};
+  const loadFavorites=async()=>{if(!auth.token)return setError("Connect Qobuz first.");setMode("favorites");setLoading(true);setError("");setAlbum(null);setPlaylist(null);try{const [a,t,r]=await Promise.all(["albums","tracks","artists"].map(type=>window.airCloud?.qobuzFavorites?.({appId:auth.appId,token:auth.token,type,limit:50})));if([a,t,r].some(x=>!x?.ok))throw new Error(a?.error||t?.error||r?.error||"Favorites failed");setLibrary({albums:a.data?.albums?.items||a.data?.items||[],tracks:t.data?.tracks?.items||t.data?.items||[],artists:r.data?.artists?.items||r.data?.items||[]})}catch(e){setError(e.message||String(e))}finally{setLoading(false)}};
+  const loadPlaylists=async()=>{if(!auth.token)return setError("Connect Qobuz first.");setMode("playlists");setLoading(true);setError("");setAlbum(null);setPlaylist(null);try{const r=await window.airCloud?.qobuzPlaylists?.({appId:auth.appId,token:auth.token,limit:50});if(!r?.ok)throw new Error(r?.error||"Playlists failed");setLibrary({playlists:r.data?.playlists?.items||r.data?.items||[]})}catch(e){setError(e.message||String(e))}finally{setLoading(false)}};
+  const play=async(t,index,kind="album")=>{if(!isA33Device(device))return setError("Qobuz native playback is currently hardware-verified only on A33.");const tracks=kind==="playlist"?(playlist?.tracks?.items||[]):(album?.tracks?.items||[]);setPlayingId(String(t.id));setError("");try{const r=await window.airCloud?.qobuzPlay?.({deviceIp:device.ip,appId:auth.appId,token:auth.token,albumId:kind==="album"?album?.id:null,playlistId:kind==="playlist"?playlist?.id:null,tracks,index,formatId:"7"});if(!r?.ok)throw new Error(r?.error||"A33 rejected Qobuz playback")}catch(e){setPlayingId("");setError(e.message||String(e))}};
+  const albums=results?.albums?.items||[]; const tracks=results?.tracks?.items||[]; const artists=results?.artists?.items||[]; const duration=n=>{n=Math.max(0,Number(n)||0);return `${Math.floor(n/60)}:${String(Math.floor(n%60)).padStart(2,"0")}`};
+  const listTracks=(items,kind)=><div className="localTrackList">{(items||[]).map((t,i)=><button key={t.id||i} className={`localTrack ${playingId===String(t.id)?"active":""}`} onClick={()=>play(t,i,kind)}><span className="localTrackNo">{t.track_number||i+1}</span><span className="localTrackText"><b>{t.title}</b><small>{t.performer?.name||t.artist?.name||album?.artist?.name||"Qobuz"}</small></span><span>{duration(t.duration)}</span><Play size={15}/></button>)}</div>;
+  return <div className="qobuzBrowser">
+    <div className="qobuzHead"><div><b>Qobuz</b><span>{auth.token?(profile?.display_name||profile?.firstname||"Connected")+" · Native A33 playback":"Connect your Qobuz account"}</span></div><div className="qobuzAuthActions">{auth.token?<><button className="ghostBtn" onClick={disconnect}>Disconnect</button></>:<><button className="primaryBtn" onClick={connect}>Connect Qobuz</button><button className="ghostBtn" onClick={importSession}>Import Session</button></>}</div></div>
+    {!auth.token&&<div className="qobuzNotice">Use <b>Connect Qobuz</b> to sign in in a separate Qobuz window. airControl captures the authenticated session token locally; your Qobuz password is never passed to airControl. PCAP import remains available only as a diagnostic fallback.</div>}
+    {auth.token&&<div className="qobuzNav"><button className={mode==="search"?"active":""} onClick={()=>setMode("search")}>Search</button><button className={mode==="favorites"?"active":""} onClick={loadFavorites}>Favorites</button><button className={mode==="playlists"?"active":""} onClick={loadPlaylists}>Playlists</button></div>}
+    {mode==="search"&&<div className="qobuzSearch"><div className="search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")search()}} placeholder="Search Qobuz…"/></div><button className="primaryBtn" onClick={search} disabled={loading||!auth.token}>{loading?"Loading…":"Search"}</button></div>}
+    {error&&<div className="usbError">{error}</div>}
+    {album?<div className="qobuzAlbumView"><button className="ghostBtn" onClick={()=>setAlbum(null)}>← Back</button><div className="qobuzAlbumHero">{album.image?.large?<img src={album.image.large}/>:<div className="albumPlaceholder"><Disc3 size={42}/></div>}<div><h2>{album.title}</h2><b>{album.artist?.name||"Unknown artist"}</b><span>{album.tracks?.items?.length||0} tracks</span></div></div>{listTracks(album.tracks?.items,"album")}</div>:
+    playlist?<div className="qobuzAlbumView"><button className="ghostBtn" onClick={()=>setPlaylist(null)}>← Playlists</button><div className="qobuzAlbumHero">{playlist.image_rectangle?.["600"]||playlist.image?.large?<img src={playlist.image_rectangle?.["600"]||playlist.image?.large}/>:<div className="albumPlaceholder"><Disc3 size={42}/></div>}<div><h2>{playlist.name||playlist.title}</h2><b>Qobuz playlist</b><span>{playlist.tracks?.items?.length||0} tracks</span></div></div>{listTracks(playlist.tracks?.items,"playlist")}</div>:
+    mode==="search"&&results?<><div className="qobuzSection"><h3>Albums</h3><div className="albumGrid">{albums.map(a=><div className="albumCard" key={a.id}><button onClick={()=>openAlbum(a)}>{a.image?.large?<img src={a.image.large}/>:<div className="albumPlaceholder"><Disc3 size={38}/></div>}<b>{a.title}</b><span>{a.artist?.name||""}</span></button></div>)}</div></div><div className="qobuzCompact"><h3>Artists</h3>{artists.slice(0,10).map(a=><button className="qobuzTextBtn" key={a.id} onClick={()=>{setQuery(a.name);setTimeout(search,0)}}>{a.name}</button>)}</div><div className="qobuzCompact"><h3>Tracks</h3>{tracks.slice(0,10).map(t=><span key={t.id}>{t.performer?.name||t.artist?.name||""} — {t.title}</span>)}</div></>:
+    mode==="favorites"&&library?<><div className="qobuzSection"><h3>Favorite Albums</h3><div className="albumGrid">{(library.albums||[]).map(a=><div className="albumCard" key={a.id}><button onClick={()=>openAlbum(a)}>{a.image?.large?<img src={a.image.large}/>:<div className="albumPlaceholder"><Disc3 size={38}/></div>}<b>{a.title}</b><span>{a.artist?.name||""}</span></button></div>)}</div></div><div className="qobuzCompact"><h3>Favorite Artists</h3>{(library.artists||[]).map(a=><span key={a.id}>{a.name}</span>)}</div></>:
+    mode==="playlists"&&library?<div className="qobuzPlaylistGrid">{(library.playlists||[]).map(p=><button className="qobuzPlaylistCard" key={p.id} onClick={()=>openPlaylist(p)}><b>{p.name||p.title}</b><span>{p.tracks_count||p.tracks?.count||""} tracks</span></button>)}</div>:<div className="usbEmpty">{auth.token?"Search Qobuz or open Favorites / Playlists.":"Connect Qobuz to start."}</div>}
+  </div>;
+}
+
 function LocalMusicLibrary({device,run,onPlayTrack,playback,onPlayDlna,dlnaPlayback}) {
   const [librarySource,setLibrarySource]=useState("local");
   const [networkSources,setNetworkSources]=useState({dlna:[],smb:[]});
   const [networkLoading,setNetworkLoading]=useState(false);
   const [networkError,setNetworkError]=useState("");
+  const [streamCaps,setStreamCaps]=useState(null);
+  const [streamCapsError,setStreamCapsError]=useState("");
+  const [streamCapsLoading,setStreamCapsLoading]=useState(false);
+  const loadStreamCaps=async()=>{if(!device?.ip||isA33Device(device))return;setStreamCapsLoading(true);setStreamCapsError("");try{const r=await window.airCloud?.getStreamCapabilities?.({ip:device.ip});if(!r?.ok)throw new Error(r?.error||"Capability query failed");setStreamCaps(r.data||null)}catch(e){setStreamCaps(null);setStreamCapsError(e?.message||String(e))}finally{setStreamCapsLoading(false)}};
+  const capabilityEntries=useMemo(()=>{const out=[];const walk=(v)=>{if(Array.isArray(v))return v.forEach(walk);if(!v||typeof v!=="object")return;const name=v.name||v.service||v.serviceName||v.source||v.id;const version=v.version||v.ver||v.serviceVersion;if(name)out.push({name:String(name),version:version==null?"":String(version),raw:v});Object.values(v).forEach(x=>{if(x&&typeof x==="object")walk(x)})};walk(streamCaps);const seen=new Set();return out.filter(x=>{const k=x.name.toLowerCase();if(seen.has(k))return false;seen.add(k);return true})},[streamCaps]);
+  const cap=(name)=>capabilityEntries.find(x=>x.name.toLowerCase()===String(name).toLowerCase());
   const [dlnaServer,setDlnaServer]=useState(null); const [dlnaStack,setDlnaStack]=useState([]); const [dlnaItems,setDlnaItems]=useState([]); const [dlnaLoading,setDlnaLoading]=useState(false);
   const [smbServer,setSmbServer]=useState(null); const [smbCfg,setSmbCfg]=useState({share:"",domain:"",username:"",password:""}); const [smbShares,setSmbShares]=useState([]); const [smbPath,setSmbPath]=useState(""); const [smbItems,setSmbItems]=useState([]); const [smbLoading,setSmbLoading]=useState(false);
   const discoverNetworkSources=async()=>{setNetworkLoading(true);setNetworkError("");try{const r=await window.airCloud?.discoverMediaServers?.();if(!r?.ok)throw new Error(r?.error||"Network discovery failed");setNetworkSources({dlna:r.dlna||[],smb:r.smb||[]})}catch(e){setNetworkError(e?.message||String(e))}finally{setNetworkLoading(false)}};
@@ -4345,6 +4473,7 @@ function LocalMusicLibrary({device,run,onPlayTrack,playback,onPlayDlna,dlnaPlayb
     return ()=>{try{off?.()}catch{}};
   },[]);
   useEffect(()=>{discoverNetworkSources()},[]);
+  useEffect(()=>{loadStreamCaps()},[device?.id,device?.ip]);
   const key="airCloudCTRL.localLibrary.v2";
   const legacyKey="airCloudCTRL.localLibrary.v1";
   const initialRoots=()=>{try{const v=JSON.parse(localStorage.getItem(key)||"null");if(Array.isArray(v?.roots))return v.roots;}catch{} try{const v=JSON.parse(localStorage.getItem(legacyKey)||"{}");return v.root?[v.root]:[]}catch{return []}};
@@ -4365,8 +4494,10 @@ function LocalMusicLibrary({device,run,onPlayTrack,playback,onPlayDlna,dlnaPlayb
   const duration=s=>{s=Math.max(0,Math.round(Number(s)||0));return `${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`};
   const TrackRows=({items})=>{const queue=[...items].sort((a,b)=>(a.disc-b.disc)||(a.track-b.track)||a.title.localeCompare(b.title));return <div className="localTrackList">{queue.map((t,i)=><button key={t.id} className={`localTrack ${playback?.track?.id===t.id?"active":""}`} onClick={()=>play(t,queue,i)}><span className="localTrackNo">{t.track||i+1}</span><span className="localTrackText"><b>{t.title}</b><small>{t.artist} · {t.album}</small></span><span>{duration(t.duration)}</span><Play size={15}/></button>)}</div>};
   return <div className="single localLibraryPage"><Panel><PanelTitle title="Music Library" sub="Local music, UPnP / DLNA and SMB servers" action={<button className="ghostBtn" onClick={discoverNetworkSources} disabled={networkLoading}><RefreshCw size={15} className={networkLoading?"spin":""}/> Discover Network</button>}/>
-    <div className="networkLibraryTabs">{[["local","This Device"],["dlna",`UPnP / DLNA (${networkSources.dlna.length})`],["smb",`SMB (${networkSources.smb.length})`]].map(([v,l])=><button key={v} className={librarySource===v?"active":""} onClick={()=>setLibrarySource(v)}>{l}</button>)}</div>
+    <div className="networkLibraryTabs">{[["local","This Device"],["qobuz",`Qobuz${cap("Qobuz")?.version?` ${cap("Qobuz").version}`:""}`],["dlna",`UPnP / DLNA (${networkSources.dlna.length})`],["smb",`SMB (${networkSources.smb.length})`]].map(([v,l])=><button key={v} className={librarySource===v?"active":""} onClick={()=>setLibrarySource(v)}>{l}</button>)}</div>
+    {!isA33Device(device)&&<div className="streamCapsBar"><div><b>Device Stream Services</b><span>{streamCapsLoading?"Reading WiiM/Linkplay capabilities…":streamCaps?`StreamCapability ${streamCaps.version||streamCaps.Version||"detected"} · ${capabilityEntries.length} services`:`Not available${streamCapsError?` · ${streamCapsError}`:""}`}</span></div><div className="streamCapsBadges">{capabilityEntries.slice(0,12).map(x=><span key={x.name}>{x.name}{x.version?` ${x.version}`:""}</span>)}</div><button className="ghostBtn" onClick={loadStreamCaps} disabled={streamCapsLoading}>Refresh</button></div>}
     {networkError&&<div className="usbError">{networkError}</div>}
+    {librarySource==="qobuz"&&<QobuzBrowser device={device}/>}
     {librarySource==="dlna"&&(!dlnaServer?<div className="networkServerGrid">{networkLoading&&!networkSources.dlna.length?<div className="usbEmpty">Searching for UPnP / DLNA MediaServers…</div>:networkSources.dlna.length?networkSources.dlna.map(x=><button className="networkServerCard networkServerButton" key={x.udn||x.location} onClick={()=>browseDlna(x)}><Network size={26}/><div><b>{x.name}</b><span>{x.model||"UPnP / DLNA MediaServer"}</span><small>{x.ip}{x.manufacturer?` · ${x.manufacturer}`:""}</small></div></button>):<div className="usbEmpty">No UPnP / DLNA MediaServers found. Press Discover Network to search again.</div>}</div>:<div className="dlnaBrowser"><div className="dlnaBrowserHead"><button className="ghostBtn" onClick={dlnaBack}>← Back</button><div><b>{dlnaStack.map(x=>x.title).join(" / ")}</b><small>{dlnaServer.name} · {dlnaServer.ip}</small></div></div>{dlnaLoading?<div className="usbEmpty">Loading DLNA folder…</div>:dlnaItems.length?<div className="dlnaItemList">{dlnaItems.map((x,i)=><button key={`${x.kind}-${x.id}-${i}`} className={`dlnaItem ${dlnaPlayback?.track?.id===x.id&&dlnaPlayback?.track?.resource?.url===x.resource?.url?"active":""}`} onClick={()=>x.kind==="container"?browseDlna(dlnaServer,x.id,x.title):playDlna(x)}>{x.artUrl?<img src={x.artUrl}/>:<div className="dlnaItemIcon">{x.kind==="container"?<Folder size={22}/>:<Disc3 size={22}/>}</div>}<span><b>{x.title}</b><small>{x.kind==="container"?(x.childCount?`${x.childCount} items`:"Folder"):[x.artist,x.album].filter(Boolean).join(" · ")||"Audio track"}</small></span><em>{x.kind==="container"?"›":<Play size={16}/>}</em></button>)}</div>:<div className="usbEmpty">This DLNA folder is empty.</div>}</div>)}
     {librarySource==="smb"&&(!smbServer?<div className="networkServerGrid">{networkLoading&&!networkSources.smb.length?<div className="usbEmpty">Searching for SMB servers…</div>:networkSources.smb.length?networkSources.smb.map(x=><button className="networkServerCard networkServerButton" key={x.ip} onClick={()=>chooseSmbServer(x)}><HardDrive size={26}/><div><b>{x.name}</b><span>SMB server</span><small>{x.ip} · TCP 445</small></div></button>):<div className="usbEmpty">No SMB servers found.</div>}</div>:<div className="dlnaBrowser"><div className="dlnaBrowserHead"><button className="ghostBtn" onClick={smbBack}>← Back</button><div><b>{smbServer.name} / {smbCfg.share}{smbPath?` / ${smbPath}`:""}</b><small>{smbServer.ip} · SMB2/3</small></div></div>{!smbItems.length&&!smbLoading?<div className="smbConnect"><label>Domain<input value={smbCfg.domain} onChange={e=>setSmbCfg(v=>({...v,domain:e.target.value}))} placeholder="optional"/></label><label>Username<input value={smbCfg.username} onChange={e=>setSmbCfg(v=>({...v,username:e.target.value}))} placeholder="guest or user"/></label><label>Password<input type="password" value={smbCfg.password} onChange={e=>setSmbCfg(v=>({...v,password:e.target.value}))}/></label><button className="ghostBtn" onClick={()=>listSmbShares(smbServer)}>Refresh Shares</button>{smbShares.length?<div className="dlnaItemList">{smbShares.map(sh=><button key={sh.name} className="dlnaItem" onClick={()=>openSmbShare(sh)}><div className="dlnaItemIcon"><Folder size={22}/></div><span><b>{sh.name}</b><small>{sh.comment||"SMB shared folder"}</small></span><em>›</em></button>)}</div>:<><label>Share (manual fallback)<input value={smbCfg.share} onChange={e=>setSmbCfg(v=>({...v,share:e.target.value}))} placeholder="Music"/></label><button className="primaryBtn" disabled={!smbCfg.share} onClick={()=>browseSmb(smbServer,"")}>Open Share</button><small>No shares were enumerated. You can still enter a share name manually.</small></>}</div>:smbLoading?<div className="usbEmpty">Loading SMB shares / folder…</div>:<div className="dlnaItemList">{smbItems.map((x,i)=><button key={`${x.path}-${i}`} className="dlnaItem" onClick={()=>x.isDirectory?browseSmb(smbServer,x.path):playSmb(x)}><div className="dlnaItemIcon">{x.isDirectory?<Folder size={22}/>:<Disc3 size={22}/>}</div><span><b>{x.title||x.name}</b><small>{x.isDirectory?"Folder":`${Math.max(0,Math.round((x.size||0)/1024/1024))} MB · SMB audio`}</small></span><em>{x.isDirectory?"›":<Play size={16}/>}</em></button>)}</div>}</div>)}
     {librarySource==="local"&&<><div className="libraryActions localLibraryActions"><button className="ghostBtn" onClick={()=>setManage(v=>!v)}>Manage Folders</button><button className="primaryBtn" onClick={choose}><Folder size={16}/> Add Music Folder</button></div>

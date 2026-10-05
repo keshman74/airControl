@@ -1,0 +1,23 @@
+airControl v4.4.57 — WiiM/Linkplay capability integration
+
+Based on v4.4.56 PHASE2 FIX9.
+
+Added:
+- Runtime WiiM/Linkplay StreamServicesCapability query.
+- RenderingControl SOAP action: StreamServicesCapability, InstanceID=0, AppVersion=1.0.
+- Reads StreamCapability JSON returned by the device.
+- Music Library displays discovered stream services and versions.
+- Qobuz tab displays device-advertised Qobuz version when detected.
+- Capability refresh button.
+- No chip-family hardcoding for Samba/Qobuz capability discovery.
+
+Preserved:
+- Existing A33 Qobuz implementation.
+- Existing SMB OS bridge playback.
+- Existing DLNA/local playback.
+- Existing Multiroom/Devices behavior.
+- Existing platForma UI.
+
+Important:
+Qobuz playback through Linkplay PlayQueue for A31/A97/A98 is NOT enabled yet.
+The exact n42.m0 -> PlayQueue QueueContext payload is still under investigation.

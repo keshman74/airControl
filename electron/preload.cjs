@@ -39,5 +39,16 @@ contextBridge.exposeInMainWorld("airCloud", {
   scanMusicFolder: (root) => ipcRenderer.invoke("library:scan", root),
   getLocalMediaUrl: (args) => ipcRenderer.invoke("library:mediaUrl", args),
   playLocalTrackUpnp: (args) => ipcRenderer.invoke("library:upnpPlay", args),
-  playRadioStationUpnp: (args) => ipcRenderer.invoke("radio:upnpPlay", args)
+  playRadioStationUpnp: (args) => ipcRenderer.invoke("radio:upnpPlay", args),
+  playRadioStationA33: (args) => ipcRenderer.invoke("radio:a33NativePlay", args),
+  qobuzConnect: () => ipcRenderer.invoke("qobuz:connect"),
+  qobuzImportSession: () => ipcRenderer.invoke("qobuz:importSession"),
+  qobuzProfile: (args) => ipcRenderer.invoke("qobuz:profile", args),
+  qobuzFavorites: (args) => ipcRenderer.invoke("qobuz:favorites", args),
+  qobuzPlaylists: (args) => ipcRenderer.invoke("qobuz:playlists", args),
+  qobuzPlaylist: (args) => ipcRenderer.invoke("qobuz:playlist", args),
+  qobuzSearch: (args) => ipcRenderer.invoke("qobuz:search", args),
+  qobuzAlbum: (args) => ipcRenderer.invoke("qobuz:album", args),
+  qobuzPlay: (args) => ipcRenderer.invoke("qobuz:play", args),
+  getStreamCapabilities: (args) => ipcRenderer.invoke("linkplay:streamCapabilities", args)
 });

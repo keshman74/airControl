@@ -481,6 +481,97 @@ function createWindow() {
   else win.loadFile(path.join(__dirname, "../dist/index.html"));
 }
 
+
+
+// v4.4.56 — Qobuz native A33 proof-of-concept.
+// Credentials are imported locally from a user-selected diagnostic capture and are never bundled.
+function qobuzHttpsJson(endpoint, params={}) {
+  return new Promise((resolve,reject)=>{
+    const q=new URLSearchParams(params).toString();
+    const req=https.get(`https://www.qobuz.com/api.json/0.2/${endpoint}?${q}`,{headers:{Accept:"application/json","User-Agent":"airControl/4.4.56"}},res=>{
+      let body=""; res.setEncoding("utf8"); res.on("data",c=>body+=c); res.on("end",()=>{
+        if((res.statusCode||0)<200||(res.statusCode||0)>=300)return reject(new Error(`Qobuz HTTP ${res.statusCode}: ${body.slice(0,180)}`));
+        try{resolve(JSON.parse(body))}catch(e){reject(new Error("Invalid Qobuz JSON response"))}
+      });
+    }); req.setTimeout(15000,()=>req.destroy(new Error("Qobuz request timeout"))); req.on("error",reject);
+  });
+}
+ipcMain.handle("qobuz:connect",async()=>{
+  return await new Promise((resolve)=>{
+    let settled=false;
+    const finish=(value)=>{if(settled)return;settled=true;try{loginWin?.close()}catch{};resolve(value)};
+    const loginWin=new BrowserWindow({width:980,height:760,title:"Connect Qobuz",webPreferences:{nodeIntegration:false,contextIsolation:true}});
+    const ses=loginWin.webContents.session;
+    const filter={urls:["https://www.qobuz.com/api.json/0.2/*"]};
+    const listener=(details,callback)=>{
+      let token="",appId="";
+      for(const h of details.requestHeaders?Object.entries(details.requestHeaders):[]){const k=String(h[0]).toLowerCase();if(k==="x-user-auth-token")token=String(h[1]||"");if(k==="x-app-id")appId=String(h[1]||"")}
+      try{const u=new URL(details.url);token=token||u.searchParams.get("user_auth_token")||"";appId=appId||u.searchParams.get("app_id")||""}catch{}
+      callback({requestHeaders:details.requestHeaders});
+      if(token)setTimeout(()=>finish({ok:true,token,appId:appId||"304027809"}),50);
+    };
+    ses.webRequest.onBeforeSendHeaders(filter,listener);
+    loginWin.on("closed",()=>{try{ses.webRequest.onBeforeSendHeaders(filter,null)}catch{};if(!settled){settled=true;resolve({ok:false,canceled:true})}});
+    loginWin.loadURL("https://play.qobuz.com/login");
+  });
+});
+ipcMain.handle("qobuz:profile",async(_e,{appId,token}={})=>{
+  try{return {ok:true,data:await qobuzHttpsJson("user/get",{app_id:appId,user_auth_token:token})}}catch(e){return {ok:false,error:e.message}}
+});
+ipcMain.handle("qobuz:favorites",async(_e,{appId,token,type="albums",limit=50}={})=>{
+  try{return {ok:true,data:await qobuzHttpsJson("favorite/getUserFavorites",{app_id:appId,user_auth_token:token,type,limit,offset:0})}}catch(e){return {ok:false,error:e.message}}
+});
+ipcMain.handle("qobuz:playlists",async(_e,{appId,token,limit=50}={})=>{
+  try{return {ok:true,data:await qobuzHttpsJson("playlist/getUserPlaylists",{app_id:appId,user_auth_token:token,type:"owner",limit,offset:0})}}catch(e){return {ok:false,error:e.message}}
+});
+ipcMain.handle("qobuz:playlist",async(_e,{appId,token,playlistId}={})=>{
+  try{return {ok:true,data:await qobuzHttpsJson("playlist/get",{app_id:appId,user_auth_token:token,playlist_id:playlistId,extra:"tracks",limit:100,offset:0})}}catch(e){return {ok:false,error:e.message}}
+});
+ipcMain.handle("qobuz:importSession",async()=>{
+  const r=await require("electron").dialog.showOpenDialog({title:"Import Qobuz session capture",properties:["openFile"],filters:[{name:"Packet capture",extensions:["pcap","cap"]},{name:"All files",extensions:["*"]}]});
+  if(r.canceled||!r.filePaths?.[0])return {ok:false,canceled:true};
+  const raw=require("fs").readFileSync(r.filePaths[0]).toString("latin1");
+  const token=(raw.match(/user_auth_token=([A-Za-z0-9_-]+)/)||[])[1];
+  const appId=(raw.match(/app_id=([0-9]+)/)||[])[1]||"304027809";
+  if(!token)return {ok:false,error:"No Qobuz user_auth_token found in this capture"};
+  return {ok:true,appId,token};
+});
+ipcMain.handle("qobuz:search",async(_e,{appId,token,query,limit=20}={})=>{
+  try{return {ok:true,data:await qobuzHttpsJson("catalog/search",{app_id:appId,user_auth_token:token,query,limit,offset:0})}}catch(e){return {ok:false,error:e.message}}
+});
+ipcMain.handle("qobuz:album",async(_e,{appId,token,albumId}={})=>{
+  try{return {ok:true,data:await qobuzHttpsJson("album/get",{app_id:appId,user_auth_token:token,album_id:albumId,limit:100,offset:0})}}catch(e){return {ok:false,error:e.message}}
+});
+function qobuzA33Frame(payload){
+  const json=Buffer.from(JSON.stringify(payload),"utf8");
+  const head=Buffer.alloc(7); head[0]=0xA3;head[1]=0xBF;head[2]=0x22;head.writeUInt16LE(Math.max(0,json.length-1),3);head[5]=0x01;head[6]=0x40;
+  return Buffer.concat([head,json,Buffer.from([0xFB])]);
+}
+ipcMain.handle("qobuz:play",async(_e,{deviceIp,appId,token,albumId,playlistId,tracks,index=0,formatId="7"}={})=>{
+  try{
+    if(!deviceIp||!token||(!albumId&&!playlistId)||!Array.isArray(tracks)||!tracks[index])throw new Error("Missing Qobuz playback data");
+    const t=tracks[index]; const ids=tracks.map(x=>String(x.id)).join("-"); const localIp=await routeAddressFor(deviceIp);
+    // Keep TrackContext identical to the Qobuz object that supplied the queue.
+    // A33 uses this URL itself to rebuild Qobuz metadata for its native controller.
+    const context=albumId
+      ? `https://www.qobuz.com/api.json/0.2/album/get?limit=${tracks.length}&offset=0&user_auth_token=${encodeURIComponent(token)}&app_id=${encodeURIComponent(appId)}&album_id=${encodeURIComponent(albumId)}`
+      : `https://www.qobuz.com/api.json/0.2/playlist/get?limit=${tracks.length}&offset=0&extra=tracks&user_auth_token=${encodeURIComponent(token)}&app_id=${encodeURIComponent(appId)}&playlist_id=${encodeURIComponent(playlistId)}`;
+    const pickImage=(x)=>{
+      if(!x)return "";
+      if(typeof x==="string")return x;
+      return x.large||x.small||x["600"]||x["300"]||x["150"]||x.thumbnail||"";
+    };
+    // Playlist track objects normally keep artwork under track.album.image, while
+    // album/get often exposes it directly. Send a real cover in both cases.
+    const image=pickImage(t.image)||pickImage(t.album?.image)||pickImage(t.album?.image_rectangle)||"";
+    const payload={TrackImage:image,TrackTitle:String(t.title||t.name||""),TrackId:String(t.id),StreamMediaName:"qobuz",SongList:ids,TrackContext:context,Path:context,SongPlay:String(t.id),Ip:localIp||"",Token:token,duration:String(t.duration||0),FormatId:String(formatId||"7")};
+    const frame=qobuzA33Frame(payload);
+    const native=await a33NativeSchedule(deviceIp,frame);
+    if(!native?.ok) throw new Error(native?.error||"A33 persistent native playback failed");
+    return {ok:true,trackId:String(t.id),persistent:true};
+  }catch(e){return {ok:false,error:e.message}}
+});
+
 app.whenReady().then(() => {
   startTestAudioServer();
   startLocalMediaServer();
@@ -490,6 +581,7 @@ app.whenReady().then(() => {
   });
 });
 
+app.on("before-quit", () => { a33CloseAllSessions(); });
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
@@ -619,6 +711,117 @@ ipcMain.handle("library:upnpPlay", async (_e,{deviceIp,id,title,artist,album,dur
   return {...play,step:play.ok?"Play":"Play",url:mediaUrl,artUrl};
 });
 
+
+// ---- A33 persistent native TCP 23040 session (v4.4.56 FIX9) ----
+// Mirrors the CLOUDYX client lifecycle recovered from iAudioCloud:
+// one long-lived socket per device, continuous reader, 00 00 Device Info on
+// connect, 00 05 heartbeat every 3 s, and controlled reconnect on failure.
+const a33NativeState = new Map();
+function a33Delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function a33ControlFrame(cmdHi,cmdLo,payload="",seq=0){
+  const data=Buffer.from(String(payload??""),"utf8");
+  const h=Buffer.alloc(7); h[0]=0xA3; h[1]=0xBF; h[2]=seq&0xff; h.writeUInt16LE(data.length,3); h[5]=cmdHi&0xff; h[6]=cmdLo&0xff;
+  return Buffer.concat([h,data,Buffer.from([0xFB])]);
+}
+function a33FrameWithSeq(frame,seq){ const out=Buffer.from(frame); if(out.length>=3) out[2]=seq&0xff; return out; }
+function a33GetState(deviceIp){
+  let st=a33NativeState.get(deviceIp);
+  if(!st){
+    st={socket:null,connecting:null,seq:0,rx:Buffer.alloc(0),lastRx:0,lastHeartbeatOk:0,heartbeatTimer:null,reconnectTimer:null,closed:false,writeChain:Promise.resolve()};
+    a33NativeState.set(deviceIp,st);
+  }
+  return st;
+}
+function a33ParseFrames(deviceIp,chunk){
+  const st=a33GetState(deviceIp); st.lastRx=Date.now(); st.rx=Buffer.concat([st.rx,chunk]);
+  while(st.rx.length>=8){
+    const start=st.rx.indexOf(Buffer.from([0xA3,0xBF]));
+    if(start<0){ st.rx=Buffer.alloc(0); return; }
+    if(start>0) st.rx=st.rx.subarray(start);
+    if(st.rx.length<8)return;
+    const len=st.rx.readUInt16LE(3); const total=7+len+1;
+    if(st.rx.length<total)return;
+    if(st.rx[total-1]!==0xFB){ st.rx=st.rx.subarray(2); continue; }
+    const hi=st.rx[5], lo=st.rx[6], data=st.rx.subarray(7,total-1).toString('utf8');
+    if(hi===0x00 && lo===0x05 && data==='OK') st.lastHeartbeatOk=Date.now();
+    st.rx=st.rx.subarray(total);
+  }
+}
+function a33DropSocket(deviceIp){
+  const st=a33GetState(deviceIp); const sock=st.socket; st.socket=null; st.rx=Buffer.alloc(0);
+  if(sock){ try{sock.removeAllListeners();sock.destroy()}catch{} }
+}
+function a33Connect(deviceIp){
+  const st=a33GetState(deviceIp); st.closed=false;
+  if(st.socket && !st.socket.destroyed && st.socket.writable) return Promise.resolve(st.socket);
+  if(st.connecting)return st.connecting;
+  st.connecting=new Promise((resolve,reject)=>{
+    let settled=false;
+    const sock=net.createConnection({host:deviceIp,port:23040});
+    const fail=(err)=>{ if(settled)return; settled=true; try{sock.destroy()}catch{}; if(st.socket===sock)st.socket=null; reject(err); };
+    sock.setKeepAlive(true,3000); sock.setNoDelay(true); sock.setTimeout(0);
+    sock.once('connect',()=>{
+      if(settled)return; settled=true; st.socket=sock; st.lastRx=Date.now(); st.lastHeartbeatOk=Date.now();
+      sock.on('data',d=>a33ParseFrames(deviceIp,d));
+      sock.on('error',()=>{});
+      sock.on('close',()=>{ if(st.socket===sock)st.socket=null; if(!st.closed)a33ScheduleReconnect(deviceIp); });
+      try{ sock.write(a33ControlFrame(0x00,0x00,"",++st.seq)); }catch{}
+      a33StartHeartbeat(deviceIp); resolve(sock);
+    });
+    sock.once('error',fail);
+  }).finally(()=>{st.connecting=null});
+  return st.connecting;
+}
+function a33ScheduleReconnect(deviceIp){
+  const st=a33GetState(deviceIp); if(st.closed||st.reconnectTimer)return;
+  st.reconnectTimer=setTimeout(async()=>{ st.reconnectTimer=null; try{await a33Connect(deviceIp)}catch{a33ScheduleReconnect(deviceIp)} },700);
+}
+function a33StartHeartbeat(deviceIp){
+  const st=a33GetState(deviceIp); if(st.heartbeatTimer)return;
+  st.heartbeatTimer=setInterval(async()=>{
+    if(st.closed)return;
+    const now=Date.now();
+    if(st.socket && !st.socket.destroyed && now-st.lastHeartbeatOk>20000){ a33DropSocket(deviceIp); a33ScheduleReconnect(deviceIp); return; }
+    try{ const sock=await a33Connect(deviceIp); sock.write(a33ControlFrame(0x00,0x05,"",++st.seq)); }catch{a33ScheduleReconnect(deviceIp)}
+  },3000);
+}
+async function a33PersistentWrite(deviceIp,frame){
+  const st=a33GetState(deviceIp);
+  const run=async()=>{
+    let lastErr;
+    for(let attempt=0;attempt<6;attempt++){
+      try{
+        const sock=await a33Connect(deviceIp); const out=a33FrameWithSeq(frame,++st.seq);
+        await new Promise((resolve,reject)=>sock.write(out,e=>e?reject(e):resolve()));
+        return {ok:true,persistent:true};
+      }catch(e){ lastErr=e; a33DropSocket(deviceIp); await a33Delay(300+attempt*250); }
+    }
+    return {ok:false,error:lastErr?.message||'A33 persistent native session failed'};
+  };
+  const result=st.writeChain.then(run,run); st.writeChain=result.then(()=>undefined,()=>undefined); return result;
+}
+function a33NativeSchedule(deviceIp,frame){ return a33PersistentWrite(deviceIp,frame); }
+function a33CloseAllSessions(){
+  for(const [ip,st] of a33NativeState){ st.closed=true; if(st.heartbeatTimer)clearInterval(st.heartbeatTimer); if(st.reconnectTimer)clearTimeout(st.reconnectTimer); a33DropSocket(ip); }
+  a33NativeState.clear();
+}
+// ---- A33 Native Internet Radio (v4.4.56 FIX2) ----
+function a33RadioFrame(payload){const json=Buffer.from(JSON.stringify(payload),"utf8");const h=Buffer.alloc(7);h[0]=0xA3;h[1]=0xBF;h[2]=0x31;h.writeUInt16LE(json.length,3);h[5]=0;h[6]=0x60;return Buffer.concat([h,json,Buffer.from([0xFB])]);}
+function a33RadioTuneInId(st={}){for(const v of [st.tuneinId,st.tunein_id,st.id,st.favicon,st.homepage,st.url]){const m=String(v||"").match(/(?:^|\/)(s\d{2,})(?:\/|$|\?|#)/i);if(m)return m[1]}return ""}
+ipcMain.handle("radio:a33NativePlay",async(_e,{deviceIp,station}={})=>{
+  try{
+    if(!deviceIp)throw new Error("Missing A33 IP");
+    const st=station||{}; const streamUrl=String(st.url||st.originalUrl||"").trim();
+    if(!streamUrl)throw new Error("Missing radio stream URL");
+    const title=String(st.name||st.title||"Internet Radio").trim()||"Internet Radio";
+    const image=String(st.favicon||st.image||st.art||"").trim();
+    const tid=a33RadioTuneInId(st); const sid=tid||String(st.id||st.stationuuid||title).trim();
+    const localIp=await routeAddressFor(deviceIp); const context=String(st.trackContext||st.context||"").trim();
+    const payload={TrackImage:image,TrackTitle:title,TrackUrl:streamUrl,TrackId:sid,Picture:image,StreamMediaName:"tunein",SongList:sid,TuneinUrl:streamUrl,TrackContext:context,Path:context,Title:title,Ip:localIp||"",TuneinId:sid};
+    const result=await a33NativeSchedule(deviceIp,a33RadioFrame(payload));
+    return {...result,stationId:sid,url:streamUrl};
+  }catch(e){return {ok:false,error:e.message}}
+});
 
 // ---- Internet Radio UPnP metadata + artwork (v3.0.7.45) ----
 function fetchRadioArtwork(url, redirects=0) {
@@ -1025,3 +1228,22 @@ ipcMain.handle("media:upnpPlay", async (_e,{deviceIp,url,title,artist,album,artU
   const set=await upnpAvTransportAction({ip:deviceIp,action:"SetAVTransportURI",innerXml:`<InstanceID>0</InstanceID><CurrentURI>${soapEscape(mediaUrl)}</CurrentURI><CurrentURIMetaData>${soapEscape(didl)}</CurrentURIMetaData>`}); if(!set.ok)return {...set,step:"SetAVTransportURI"};
   const play=await upnpAvTransportAction({ip:deviceIp,action:"Play",innerXml:"<InstanceID>0</InstanceID><Speed>1</Speed>"}); return {...play,step:"Play",url:mediaUrl,artUrl:artUrl||""};
 });
+
+
+// v4.4.57 — WiiM Home APK research: runtime StreamServicesCapability discovery.
+// Do not infer Samba/Qobuz/etc. from A31/A97/A98 alone; ask the renderer.
+function decodeBasicXml(value="") {
+  return String(value).replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+}
+function renderingCapabilityRequest(ip, timeout=5000) {
+  return new Promise(resolve=>{
+    const body=`<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:StreamServicesCapability xmlns:u="urn:schemas-upnp-org:service:RenderingControl:1"><InstanceID>0</InstanceID><AppVersion>1.0</AppVersion></u:StreamServicesCapability></s:Body></s:Envelope>`;
+    const req=http.request({hostname:String(ip||"").trim(),port:49152,path:"/upnp/control/rendercontrol1",method:"POST",timeout,headers:{"Content-Type":'text/xml; charset="utf-8"',"SOAPAction":'"urn:schemas-upnp-org:service:RenderingControl:1#StreamServicesCapability"',"Content-Length":Buffer.byteLength(body),"Connection":"close","User-Agent":"airControl/4.4.57"},agent:false},res=>{let raw="";res.setEncoding("utf8");res.on("data",c=>raw+=c);res.on("end",()=>{
+      if(res.statusCode<200||res.statusCode>=300)return resolve({ok:false,status:res.statusCode,error:`StreamServicesCapability HTTP ${res.statusCode}`,raw});
+      const m=raw.match(/<StreamCapability[^>]*>([\s\S]*?)<\/StreamCapability>/i); if(!m)return resolve({ok:false,status:res.statusCode,error:"StreamCapability missing",raw});
+      const text=decodeBasicXml(m[1].trim()); let data=null; try{data=JSON.parse(text)}catch(e){return resolve({ok:false,status:res.statusCode,error:"Invalid StreamCapability JSON",raw,capabilityRaw:text})}
+      resolve({ok:true,status:res.statusCode,data,capabilityRaw:text});
+    });}); req.on("timeout",()=>req.destroy(new Error("StreamServicesCapability timeout"))); req.on("error",e=>resolve({ok:false,error:e.message})); req.end(body);
+  });
+}
+ipcMain.handle("linkplay:streamCapabilities", async (_e,{ip}={})=>{if(!ip)return {ok:false,error:"Missing device IP"}; return renderingCapabilityRequest(ip);});
