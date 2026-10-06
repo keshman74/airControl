@@ -2,7 +2,7 @@
 
 **Project:** airControl  
 **Repository:** keshman74/airControl  
-**Registry date:** 2026-10-05  
+**Registry date:** 2026-10-06  
 **Purpose:** one canonical, searchable registry of commands and protocol behavior discovered during airControl reverse engineering.
 
 > Evidence labels used throughout:
@@ -344,6 +344,27 @@ Also **HW VERIFIED:** two Seek commands sent sequentially through the same TCP c
 
 ---
 
+## 5.4 Native TCP :23040 — additional live traffic observed 2026-10-06
+
+A live tcpdump between the desktop controller and A33 at `192.168.0.31` confirmed that the native `:23040` connection is bidirectional and carries unsolicited device-state updates in addition to request/reply traffic.
+
+**OBSERVED on A33 firmware 2.35.0023.33:**
+
+- the controller sends short 8-byte native frames and the device acknowledges applicable requests with ASCII `OK`;
+- device-originated state includes JSON objects such as `{"DevVolume":"34"}`;
+- mute state is pushed as `{"VolumeState":"unmute"}` (and the same field is used for mute state);
+- playback-state traffic includes `plays`;
+- current-media traffic includes `MusicData` and service-specific metadata, including Qobuz track identity/artwork information;
+- device capability/state traffic reported a `MusicSupportList` whose `Preset` services included `TIDAL`, `TuneIn`, `Qobuz`, `vTuner`, and `OpenNetworkStream`.
+
+This capture proves that A33 has a native preset-capability model, but it does **not** yet identify the exact native command/payload that recalls preset slots 1…10. Do not map the Linkplay `MCU+KEY+001..010` preset protocol onto A33.
+
+The capture also confirms that `:23040` should be treated as a persistent bidirectional state/control channel. Unsolicited volume, mute, playback and media updates can be used for feedback/reconciliation instead of polling the same state continuously.
+
+**Evidence:** OBSERVED from live network capture; exact command-to-response correlation for the unidentified 8-byte requests remains under investigation.
+
+---
+
 # 6. A33 native volume / mute
 
 iAudioCloud selects old/new volume protocol from the second dot-separated VERSION component:
@@ -593,6 +614,23 @@ These are used for A33 multiroom topology/control.
 
 ---
 
+## 9.1 ACS2/status responses additionally observed 2026-10-06
+
+Live traffic on A33 at `192.168.0.31:8000` confirmed these status queries in active desktop use:
+
+| Request | Observed response/use | Evidence |
+|---|---|---|
+| `getStatusEx` | extended device/status JSON | **OBSERVED** |
+| `getPlayerStatus` | player state including source/service, play state, volume and mute | **OBSERVED** |
+| `getMetaInfo` | current media metadata | **OBSERVED** |
+| `getPresetInfo` | returned `Error` on the tested A33 | **HW VERIFIED negative result** |
+
+One captured `getPlayerStatus` response reported Qobuz playback, `play` state, volume `10`, and unmuted state.
+
+**Canonical rule:** `getPresetInfo` must not be used as the A33 preset API. Preset recall remains unresolved until its actual A33 native/JSON command and payload are correlated from source or capture.
+
+---
+
 # 10. A33 gmrender / DLNA / UPnP
 
 A33 contains a gmrender-resurrect-based renderer, but this is **not the same playback/control engine as iAudioCloud TCP :1234/:23040**.
@@ -734,6 +772,10 @@ Frame: A3 BF | SEQ | LEN_LE | CMD[2] | DATA | FB
 00 34  Seek seconds        HW VERIFIED
 00 47  Volume (new)        HW VERIFIED on v2.35.0023.33
 00 48  Mute/Unmute (new)   HW VERIFIED on v2.35.0023.33
+
+23040 RX push state observed: DevVolume / VolumeState / plays / MusicData
+Preset capability observed: TIDAL / TuneIn / Qobuz / vTuner / OpenNetworkStream
+Exact A33 preset-slot recall command: NOT YET IDENTIFIED
 
 JSON TCP
 TCP 1234
