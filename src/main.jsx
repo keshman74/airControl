@@ -420,7 +420,7 @@ function App() {
             const slot=Number(p.PresetNumber);
             const name=String(p.PresetName||"").trim();
             const logo=String(p.Logo||"").trim();
-            return {slot,name,art:/^https?:\\/\\//i.test(logo)?logo:""};
+            return {slot,name,art:/^https?:\/\//i.test(logo)?logo:""};
           }).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
         }
         if(!result?.ok)throw new Error(result?.error||"Preset read failed");
@@ -2518,7 +2518,7 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
             const r=await api(device,"getPresetListInfo");
             if(!r?.ok)throw Error("read failed");
             const payload=typeof r.data==="string"?JSON.parse(r.data):r.data;
-            result={ok:true,maxSlots:12,presets:(Array.isArray(payload?.Presets)?payload.Presets:[]).map(p=>({slot:Number(p.PresetNumber),name:String(p.PresetName||"").trim(),art:/^https?:\\/\\//i.test(String(p.Logo||""))?p.Logo:""})).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
+            result={ok:true,maxSlots:12,presets:(Array.isArray(payload?.Presets)?payload.Presets:[]).map(p=>({slot:Number(p.PresetNumber),name:String(p.PresetName||"").trim(),art:/^https?:\/\//i.test(String(p.Logo||""))?p.Logo:""})).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
           } else throw Error("Not supported");
           if(!result?.ok)throw Error("read failed");
           setDevicePresetState({deviceId:device.id,loading:false,presets:result.presets||[],maxSlots:result.maxSlots||0,error:""});
