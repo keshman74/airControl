@@ -280,6 +280,61 @@ function linkplayUpnpPositionInfo({ ip, timeout = 3500 } = {}) {
   });
 }
 
+
+/*
+ * A31 hardware-confirmed 2026-10-13: PlayQueue GetKeyMapping, port 49152.
+ * Return display-safe fields only. Never forward Metadata/Url/token-bearing
+ * QueueContext to the renderer or persist it.
+ */
+function linkplayGetDevicePresets({ip, timeout=3500}={}) {
+  return new Promise(resolve=>{
+    const host=String(ip||"").trim();
+    if(!/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(host)) return resolve({ok:false,error:"Invalid device IP"});
+    const service="urn:schemas-wiimu-com:service:PlayQueue:1";
+    const body='<?xml version="1.0" encoding="utf-8"?>'
+      +'<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>'
+      +'<u:GetKeyMapping xmlns:u="'+service+'"></u:GetKeyMapping>'
+      +'</s:Body></s:Envelope>';
+    const req=http.request({hostname:host,port:49152,path:"/upnp/control/PlayQueue1",
+      method:"POST",timeout:Number(timeout)||3500,agent:false,
+      headers:{"Content-Type":'text/xml; charset="utf-8"',
+        "SOAPAction":'"'+service+'#GetKeyMapping"',"Content-Length":Buffer.byteLength(body),
+        "Connection":"close"}},
+      res=>{
+        const chunks=[];let size=0;
+        res.on("data",c=>{size+=c.length;if(size<=1024*1024)chunks.push(c);else req.destroy(new Error("Preset response too large"));});
+        res.on("end",()=>{
+          if(size>1024*1024)return;
+          if(res.statusCode<200||res.statusCode>=300)return resolve({ok:false,error:"UPnP HTTP "+res.statusCode});
+          const xml=Buffer.concat(chunks).toString("utf8");
+          const context=xmlTag(xml,"QueueContext");
+          if(!context)return resolve({ok:false,error:"QueueContext not found"});
+          const decoded=decodeXmlEntities(context);
+          const presets=[];
+          const pattern=/<(?:[\\w-]+:)?Key(\\d+)(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w-]+:)?Key\\1>/gi;
+          for(const match of decoded.matchAll(pattern)){
+            const slot=Number(match[1]);if(slot<1||slot>20)continue;
+            const name=xmlTag(match[2],"Name").replace(/_#~\\d{4}-\\d{2}-\\d{2}[^]*$/,"").trim();
+            if(!name)continue;
+            const pic=xmlTag(match[2],"PicUrl");
+            const metadata=decodeXmlEntities(xmlTag(match[2],"Metadata"));
+            const metaArt=xmlTag(metadata,"albumArtURI");
+            const source=xmlTag(match[2],"Source").toLowerCase();
+            const isRadio=/radio|tunein|vtuner|http_music/.test(source)||/radio|fm|somafm/i.test(name);
+            const preferred=isRadio?(metaArt||pic):(pic||metaArt);
+            const art=/^https?:\\/\\//i.test(preferred)?preferred:"";
+            presets.push({slot,name,art});
+          }
+          resolve({ok:true,presets,maxSlots:20});
+        });
+      });
+    req.on("timeout",()=>req.destroy(new Error("GetKeyMapping timed out")));
+    req.on("error",e=>resolve({ok:false,error:e.message}));
+    req.end(body);
+  });
+}
+ipcMain.handle("linkplay:devicePresets",(_e,args)=>linkplayGetDevicePresets(args||{}));
+
 ipcMain.handle("linkplay:upnpPositionInfo", async (_event, args) => {
   return linkplayUpnpPositionInfo(args || {});
 });
