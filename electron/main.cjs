@@ -289,7 +289,7 @@ function linkplayUpnpPositionInfo({ ip, timeout = 3500 } = {}) {
 function linkplayGetDevicePresets({ip, timeout=3500}={}) {
   return new Promise(resolve=>{
     const host=String(ip||"").trim();
-    if(!/^(?:\\d{1,3}\\.){3}\\d{1,3}$/.test(host)) return resolve({ok:false,error:"Invalid device IP"});
+    if(!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)) return resolve({ok:false,error:"Invalid device IP"});
     const service="urn:schemas-wiimu-com:service:PlayQueue:1";
     const body='<?xml version="1.0" encoding="utf-8"?>'
       +'<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>'
@@ -311,10 +311,10 @@ function linkplayGetDevicePresets({ip, timeout=3500}={}) {
           if(!context)return resolve({ok:false,error:"QueueContext not found"});
           const decoded=decodeXmlEntities(context);
           const presets=[];
-          const pattern=/<(?:[\\w-]+:)?Key(\\d+)(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w-]+:)?Key\\1>/gi;
+          const pattern=/<(?:[\w-]+:)?Key(\d+)(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\w-]+:)?Key\1>/gi;
           for(const match of decoded.matchAll(pattern)){
             const slot=Number(match[1]);if(slot<1||slot>20)continue;
-            const name=xmlTag(match[2],"Name").replace(/_#~\\d{4}-\\d{2}-\\d{2}[^]*$/,"").trim();
+            const name=xmlTag(match[2],"Name").replace(/_#~\d{4}-\d{2}-\d{2}[^]*$/,"").trim();
             if(!name)continue;
             const pic=xmlTag(match[2],"PicUrl");
             const metadata=decodeXmlEntities(xmlTag(match[2],"Metadata"));
@@ -322,7 +322,7 @@ function linkplayGetDevicePresets({ip, timeout=3500}={}) {
             const source=xmlTag(match[2],"Source").toLowerCase();
             const isRadio=/radio|tunein|vtuner|http_music/.test(source)||/radio|fm|somafm/i.test(name);
             const preferred=isRadio?(metaArt||pic):(pic||metaArt);
-            const art=/^https?:\\/\\//i.test(preferred)?preferred:"";
+            const art=/^https?:\/\//i.test(preferred)?preferred:"";
             presets.push({slot,name,art});
           }
           resolve({ok:true,presets,maxSlots:20});
