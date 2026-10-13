@@ -42,6 +42,7 @@ contextBridge.exposeInMainWorld("airCloud", {
   playLocalTrackUpnp: (args) => ipcRenderer.invoke("library:upnpPlay", args),
   playRadioStationUpnp: (args) => ipcRenderer.invoke("radio:upnpPlay", args),
   playRadioStationA33: (args) => ipcRenderer.invoke("radio:a33NativePlay", args),
+  activateA33Preset: (args) => ipcRenderer.invoke("a33:presetActivate", args),
   qobuzConnect: () => ipcRenderer.invoke("qobuz:connect"),
   qobuzImportSession: () => ipcRenderer.invoke("qobuz:importSession"),
   qobuzProfile: (args) => ipcRenderer.invoke("qobuz:profile", args),

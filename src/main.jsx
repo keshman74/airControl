@@ -420,7 +420,8 @@ function App() {
             const slot=Number(p.PresetNumber);
             const name=String(p.PresetName||"").trim();
             const logo=String(p.Logo||"").trim();
-            return {slot,name,art:/^https?:\/\//i.test(logo)?logo:""};
+            const art=String(p.MusicData?.TrackImage||"").trim();
+            return {slot,name,logo,art:/^https?:\/\//i.test(art)?art:""};
           }).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
         }
         if(!result?.ok)throw new Error(result?.error||"Preset read failed");
@@ -1605,8 +1606,8 @@ function App() {
             </div>
 
             {tab==="Overview" && <Overview device={device} setVolume={setVolume} setSeek={setSeek} run={run} setTab={navigateTo} refresh={()=>refreshStatus(device,{silent:false})} trackOverride={effectiveTrackOverride} />}
-            {tab==="Player" && <Player device={device} run={run} setVolume={setVolume} setSeek={setSeek} radioNowPlaying={radioNowPlaying} setRadioNowPlaying={setRadioNowPlaying} localTrackOverride={localTrackOverride || dlnaTrackOverride} onPrevious={()=>activeQueueStep(-1)} onNext={()=>activeQueueStep(1)} view="player"/>} 
-            {tab==="Internet Radio" && <Player device={device} run={run} setVolume={setVolume} setSeek={setSeek} radioNowPlaying={radioNowPlaying} setRadioNowPlaying={setRadioNowPlaying} localTrackOverride={localTrackOverride || dlnaTrackOverride} onPrevious={()=>activeQueueStep(-1)} onNext={()=>activeQueueStep(1)} view="radio"/>}
+            {tab==="Player" && <Player device={device} devicePresetState={devicePresetState} setDevicePresetState={setDevicePresetState} run={run} setVolume={setVolume} setSeek={setSeek} radioNowPlaying={radioNowPlaying} setRadioNowPlaying={setRadioNowPlaying} localTrackOverride={localTrackOverride || dlnaTrackOverride} onPrevious={()=>activeQueueStep(-1)} onNext={()=>activeQueueStep(1)} view="player"/>} 
+            {tab==="Internet Radio" && <Player device={device} devicePresetState={devicePresetState} setDevicePresetState={setDevicePresetState} run={run} setVolume={setVolume} setSeek={setSeek} radioNowPlaying={radioNowPlaying} setRadioNowPlaying={setRadioNowPlaying} localTrackOverride={localTrackOverride || dlnaTrackOverride} onPrevious={()=>activeQueueStep(-1)} onNext={()=>activeQueueStep(1)} view="radio"/>}
             {tab==="Library" && <LocalMusicLibrary device={device} run={run} onPlayTrack={startLocalLibraryTrack} playback={localPlayback} onPlayDlna={startDlnaQueueTrack} dlnaPlayback={dlnaPlayback}/>} 
             {tab==="Source" && <Source device={device} run={run}/>} 
             {tab==="Volume" && <Volume device={device} setVolume={setVolume} run={run}/>} 
@@ -2232,7 +2233,7 @@ function Overview({device,setVolume,setSeek,run,setTab,refresh,trackOverride=nul
   </div>
 }
 
-function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying,localTrackOverride=null,onPrevious=null,onNext=null,view="player"}){
+function Player({device,devicePresetState,setDevicePresetState,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying,localTrackOverride=null,onPrevious=null,onNext=null,view="player"}){
   const initialRadioBrowserState = useMemo(()=>{
     try {
       const saved = JSON.parse(localStorage.getItem(RADIO_BROWSER_STATE_KEY) || "null");
@@ -2518,7 +2519,7 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
             const r=await api(device,"getPresetListInfo");
             if(!r?.ok)throw Error("read failed");
             const payload=typeof r.data==="string"?JSON.parse(r.data):r.data;
-            result={ok:true,maxSlots:12,presets:(Array.isArray(payload?.Presets)?payload.Presets:[]).map(p=>({slot:Number(p.PresetNumber),name:String(p.PresetName||"").trim(),art:/^https?:\/\//i.test(String(p.Logo||""))?p.Logo:""})).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
+            result={ok:true,maxSlots:12,presets:(Array.isArray(payload?.Presets)?payload.Presets:[]).map(p=>({slot:Number(p.PresetNumber),name:String(p.PresetName||"").trim(),logo:String(p.Logo||"").trim(),art:/^https?:\/\//i.test(String(p.MusicData?.TrackImage||""))?String(p.MusicData.TrackImage):""})).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
           } else throw Error("Not supported");
           if(!result?.ok)throw Error("read failed");
           setDevicePresetState({deviceId:device.id,loading:false,presets:result.presets||[],maxSlots:result.maxSlots||0,error:""});
@@ -2527,7 +2528,25 @@ function Player({device,run,setVolume,setSeek,radioNowPlaying,setRadioNowPlaying
       {devicePresetState.loading&&devicePresetState.deviceId===device?.id&&<p>Reading device presets…</p>}
       {devicePresetState.error&&devicePresetState.deviceId===device?.id&&<p>{devicePresetState.error}</p>}
       <div className="devicePresetGrid">
-        {(devicePresetState.deviceId===device?.id?devicePresetState.presets:[]).map(p=><button key={p.slot} disabled={airControlCore.chip(device)==="A31"&&p.slot>10} title={p.name} onClick={()=>airControlCore.chip(device)==="A31"?run(`MCUKeyShortClick:${p.slot}`):run(`choicePreset:${p.slot}`)}><span>{p.slot}</span>{p.art&&<img src={p.art} alt="" loading="lazy" style={{width:44,height:44,objectFit:"cover",borderRadius:6}}/>}<b>{p.name}</b></button>)}
+        {(devicePresetState.deviceId===device?.id?devicePresetState.presets:[]).map(p=><button key={p.slot} disabled={airControlCore.chip(device)==="A31"&&p.slot>10} title={p.name} onClick={async()=>{
+  if(airControlCore.chip(device)==="A31"){
+    return run(`MCUKeyShortClick:${p.slot}`);
+  }
+  if(!p.logo){
+    setDevicePresetState(prev=>({...prev,error:"Preset has no Logo"}));
+    return;
+  }
+  const r=await window.airCloud?.activateA33Preset?.({
+    deviceIp:device.ip,
+    logo:p.logo,
+    timeout:6000
+  });
+  if(!r?.ok){
+    setDevicePresetState(prev=>({...prev,error:r?.error||"Preset failed"}));
+  }else{
+    setDevicePresetState(prev=>({...prev,error:""}));
+  }
+}}><span>{p.slot}</span>{p.art&&<img src={p.art} alt="" loading="lazy" style={{width:44,height:44,objectFit:"cover",borderRadius:6}}/>}<b>{p.name}</b></button>)}
       </div>
       {!devicePresetState.loading&&!devicePresetState.error&&devicePresetState.deviceId===device?.id&&devicePresetState.presets.length===0&&<p>No saved device presets</p>}
     </Panel>

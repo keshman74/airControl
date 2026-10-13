@@ -782,26 +782,112 @@ function a33FrameWithSeq(frame,seq){ const out=Buffer.from(frame); if(out.length
 function a33GetState(deviceIp){
   let st=a33NativeState.get(deviceIp);
   if(!st){
-    st={socket:null,connecting:null,seq:0,rx:Buffer.alloc(0),lastRx:0,lastHeartbeatOk:0,heartbeatTimer:null,reconnectTimer:null,closed:false,writeChain:Promise.resolve()};
+    st={socket:null,connecting:null,seq:0,rx:Buffer.alloc(0),lastRx:0,lastHeartbeatOk:0,heartbeatTimer:null,reconnectTimer:null,closed:false,writeChain:Promise.resolve(),waiters:[]};
     a33NativeState.set(deviceIp,st);
   }
   return st;
 }
-function a33ParseFrames(deviceIp,chunk){
-  const st=a33GetState(deviceIp); st.lastRx=Date.now(); st.rx=Buffer.concat([st.rx,chunk]);
-  while(st.rx.length>=8){
-    const start=st.rx.indexOf(Buffer.from([0xA3,0xBF]));
-    if(start<0){ st.rx=Buffer.alloc(0); return; }
-    if(start>0) st.rx=st.rx.subarray(start);
-    if(st.rx.length<8)return;
-    const len=st.rx.readUInt16LE(3); const total=7+len+1;
-    if(st.rx.length<total)return;
-    if(st.rx[total-1]!==0xFB){ st.rx=st.rx.subarray(2); continue; }
-    const hi=st.rx[5], lo=st.rx[6], data=st.rx.subarray(7,total-1).toString('utf8');
-    if(hi===0x00 && lo===0x05 && data==='OK') st.lastHeartbeatOk=Date.now();
-    st.rx=st.rx.subarray(total);
+function a33DispatchFrame(deviceIp,frame){
+  const st=a33GetState(deviceIp);
+
+  if(frame.hi===0x00 && frame.lo===0x05 && frame.data==="OK"){
+    st.lastHeartbeatOk=Date.now();
+  }
+
+  if(!Array.isArray(st.waiters)||!st.waiters.length)return;
+
+  for(const waiter of [...st.waiters]){
+    let matched=false;
+    try{ matched=!!waiter.match(frame); }catch{}
+    if(!matched)continue;
+
+    st.waiters=st.waiters.filter(w=>w!==waiter);
+    clearTimeout(waiter.timer);
+    waiter.resolve(frame);
   }
 }
+
+function a33ParseFrames(deviceIp,chunk){
+  const st=a33GetState(deviceIp);
+  st.lastRx=Date.now();
+  st.rx=Buffer.concat([st.rx,chunk]);
+
+  while(true){
+    if(st.rx.length<8)return;
+
+    const start=st.rx.indexOf(Buffer.from([0xA3,0xBF]));
+
+    if(start<0){
+      // Keep a possible partial A3 marker for the next TCP chunk.
+      st.rx=st.rx.length && st.rx[st.rx.length-1]===0xA3
+        ? st.rx.subarray(st.rx.length-1)
+        : Buffer.alloc(0);
+      return;
+    }
+
+    if(start>0)st.rx=st.rx.subarray(start);
+    if(st.rx.length<8)return;
+
+    const len=st.rx.readUInt16LE(3);
+    const payloadEnd=7+len;
+
+    if(st.rx.length<payloadEnd+1)return;
+
+    let frameEnd=-1;
+
+    // Normal frame:
+    // A3 BF SEQ LEN_LO LEN_HI CMD1 CMD2 DATA FB
+    if(st.rx[payloadEnd]===0xFB){
+      frameEnd=payloadEnd+1;
+    }
+    // Hardware-observed A33 variant:
+    // declared DATA, then an extra NUL, then FB.
+    else if(
+      st.rx.length>=payloadEnd+2 &&
+      st.rx[payloadEnd]===0x00 &&
+      st.rx[payloadEnd+1]===0xFB
+    ){
+      frameEnd=payloadEnd+2;
+    } else {
+      // If the expected terminator has not arrived yet, do not destroy
+      // a potentially fragmented frame.
+      if(st.rx.length===payloadEnd+1)return;
+
+      // Invalid framing: resync to the next A3 BF.
+      st.rx=st.rx.subarray(2);
+      continue;
+    }
+
+    const frame={
+      seq:st.rx[2],
+      hi:st.rx[5],
+      lo:st.rx[6],
+      data:st.rx.subarray(7,payloadEnd).toString("utf8").replace(/\0+$/,"")
+    };
+
+    st.rx=st.rx.subarray(frameEnd);
+
+    a33DispatchFrame(deviceIp,frame);
+
+    // Continue: one TCP data event may contain another complete frame.
+  }
+}
+
+function a33WaitForFrame(deviceIp,match,timeout=5000){
+  const st=a33GetState(deviceIp);
+
+  return new Promise((resolve,reject)=>{
+    const waiter={match,resolve,reject,timer:null};
+
+    waiter.timer=setTimeout(()=>{
+      st.waiters=st.waiters.filter(w=>w!==waiter);
+      reject(new Error("A33 native response timeout"));
+    },timeout);
+
+    st.waiters.push(waiter);
+  });
+}
+
 function a33DropSocket(deviceIp){
   const st=a33GetState(deviceIp); const sock=st.socket; st.socket=null; st.rx=Buffer.alloc(0);
   if(sock){ try{sock.removeAllListeners();sock.destroy()}catch{} }
@@ -856,6 +942,55 @@ async function a33PersistentWrite(deviceIp,frame){
   const result=st.writeChain.then(run,run); st.writeChain=result.then(()=>undefined,()=>undefined); return result;
 }
 function a33NativeSchedule(deviceIp,frame){ return a33PersistentWrite(deviceIp,frame); }
+
+ipcMain.handle("a33:presetActivate",async(_e,{deviceIp,logo,timeout=5000}={})=>{
+  try{
+    const targetLogo=String(logo||"").trim();
+
+    if(!deviceIp)throw new Error("Missing A33 IP");
+    if(!targetLogo)throw new Error("Missing A33 preset Logo");
+
+    // Ensure the persistent reader is active BEFORE sending the command.
+    await a33Connect(deviceIp);
+
+    const wait=a33WaitForFrame(
+      deviceIp,
+      frame=>{
+        if(frame.hi!==0x03 || frame.lo!==0x70)return false;
+
+        try{
+          const payload=JSON.parse(frame.data);
+          return String(payload?.Logo||"")===targetLogo;
+        }catch{
+          return false;
+        }
+      },
+      Math.max(1000,Number(timeout)||5000)
+    );
+
+    const payload=JSON.stringify({Logo:targetLogo});
+    const frame=a33ControlFrame(0x03,0x70,payload,0);
+
+    const sent=await a33NativeSchedule(deviceIp,frame);
+
+    if(!sent?.ok){
+      throw new Error(sent?.error||"A33 preset command send failed");
+    }
+
+    const ack=await wait;
+
+    return {
+      ok:true,
+      logo:targetLogo,
+      command:"03 70",
+      response:ack.data,
+      persistent:true
+    };
+  }catch(e){
+    return {ok:false,error:e.message};
+  }
+});
+
 function a33CloseAllSessions(){
   for(const [ip,st] of a33NativeState){ st.closed=true; if(st.heartbeatTimer)clearInterval(st.heartbeatTimer); if(st.reconnectTimer)clearTimeout(st.reconnectTimer); a33DropSocket(ip); }
   a33NativeState.clear();
