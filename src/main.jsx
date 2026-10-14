@@ -398,13 +398,45 @@ function App() {
 
   // Native device preset names are read on device selection / explicit refresh,
   // not polled on the player status interval.
-  const [devicePresetState,setDevicePresetState]=useState({deviceId:"",loading:false,presets:[],maxSlots:0,error:""});
+  const [devicePresetState,setDevicePresetState]=useState({deviceId:"",loading:false,presets:[],maxSlots:0,error:"",activeSlot:null});
   useEffect(()=>{
     if(!device?.id||!device?.online)return;
     const chip=airControlCore.chip(device);
     if(chip!=="A31"&&chip!=="A98"&&chip!=="A33")return;
+
     let cancelled=false;
-    setDevicePresetState({deviceId:device.id,loading:true,presets:[],maxSlots:chip==="A31"?20:12,error:""});
+    let removeA98PresetListener=null;
+
+    if(chip==="A98"){
+      removeA98PresetListener=window.airCloud?.onA98PresetActive?.((payload)=>{
+        if(cancelled)return;
+        if(String(payload?.ip||"")!==String(device.ip||""))return;
+
+        const slot=Number(payload?.slot);
+        if(!Number.isInteger(slot)||slot<1||slot>12)return;
+
+        setDevicePresetState(prev=>{
+          if(prev.deviceId!==device.id)return prev;
+          if(prev.activeSlot===slot)return prev;
+          return {...prev,activeSlot:slot};
+        });
+      });
+
+      window.airCloud?.startA98PresetEventing?.({ip:device.ip})
+        .then(r=>{
+          if(cancelled||!r?.ok)return;
+
+          const slot=Number(r?.activeSlot);
+          if(Number.isInteger(slot)&&slot>=1&&slot<=12){
+            setDevicePresetState(prev=>{
+              if(prev.deviceId!==device.id)return prev;
+              return {...prev,activeSlot:slot};
+            });
+          }
+        })
+        .catch(e=>console.warn("[A98 PRESET EVENTING]",e));
+    }
+    setDevicePresetState({deviceId:device.id,loading:true,presets:[],maxSlots:chip==="A31"?20:12,error:"",activeSlot:null});
     (async()=>{
       try{
         let result;
@@ -427,12 +459,31 @@ function App() {
           }).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
         }
         if(!result?.ok)throw new Error(result?.error||"Preset read failed");
-        if(!cancelled)setDevicePresetState({deviceId:device.id,loading:false,presets:result.presets||[],maxSlots:result.maxSlots||0,error:""});
+        if(!cancelled)setDevicePresetState(prev=>({
+          deviceId:device.id,
+          loading:false,
+          presets:result.presets||[],
+          maxSlots:result.maxSlots||0,
+          error:"",
+          activeSlot:prev.deviceId===device.id?prev.activeSlot:null
+        }));
       }catch{
-        if(!cancelled)setDevicePresetState({deviceId:device.id,loading:false,presets:[],maxSlots:chip==="A31"?20:12,error:"Read failed"});
+        if(!cancelled)setDevicePresetState(prev=>({
+          deviceId:device.id,
+          loading:false,
+          presets:[],
+          maxSlots:chip==="A31"?20:12,
+          error:"Read failed",
+          activeSlot:prev.deviceId===device.id?prev.activeSlot:null
+        }));
       }
     })();
-    return()=>{cancelled=true};
+    return()=>{
+      cancelled=true;
+      if(typeof removeA98PresetListener==="function"){
+        removeA98PresetListener();
+      }
+    };
   },[device?.id,device?.ip,device?.online]);
 
 
@@ -2517,6 +2568,7 @@ function Player({device,devicePresetState,setDevicePresetState,run,setVolume,set
         try{
           let result;
           if(chip==="A31") result=await window.airCloud?.getLinkplayDevicePresets?.({ip:device.ip,timeout:3500});
+          else if(chip==="A98") result=await window.airCloud?.getA98DevicePresets?.({ip:device.ip,timeout:5000});
           else if(chip==="A33"){
             const r=await api(device,"getPresetListInfo");
             if(!r?.ok)throw Error("read failed");
@@ -2524,13 +2576,27 @@ function Player({device,devicePresetState,setDevicePresetState,run,setVolume,set
             result={ok:true,maxSlots:12,presets:(Array.isArray(payload?.Presets)?payload.Presets:[]).map(p=>({slot:Number(p.PresetNumber),name:String(p.PresetName||"").trim(),logo:String(p.Logo||"").trim(),art:/^https?:\/\//i.test(String(p.MusicData?.TrackImage||""))?String(p.MusicData.TrackImage):""})).filter(p=>p.slot>=1&&p.slot<=12&&p.name)};
           } else throw Error("Not supported");
           if(!result?.ok)throw Error("read failed");
-          setDevicePresetState({deviceId:device.id,loading:false,presets:result.presets||[],maxSlots:result.maxSlots||0,error:""});
-        }catch{setDevicePresetState({deviceId:device.id,loading:false,presets:[],maxSlots:chip==="A31"?20:12,error:"Read failed"});}
+          setDevicePresetState(prev=>({
+            deviceId:device.id,
+            loading:false,
+            presets:result.presets||[],
+            maxSlots:result.maxSlots||0,
+            error:"",
+            activeSlot:prev.deviceId===device.id?prev.activeSlot:null
+          }));
+        }catch{setDevicePresetState(prev=>({
+          deviceId:device.id,
+          loading:false,
+          presets:[],
+          maxSlots:chip==="A31"?20:12,
+          error:"Read failed",
+          activeSlot:prev.deviceId===device.id?prev.activeSlot:null
+        }));}
       }}><RefreshCw size={14} className={devicePresetState.loading?"spin":""}/> Refresh</button>}/>
       {devicePresetState.loading&&devicePresetState.deviceId===device?.id&&<p>Reading device presets…</p>}
       {devicePresetState.error&&devicePresetState.deviceId===device?.id&&<p>{devicePresetState.error}</p>}
       <div className="devicePresetGrid">
-        {(devicePresetState.deviceId===device?.id?devicePresetState.presets:[]).map(p=><button key={p.slot} disabled={airControlCore.chip(device)==="A31"&&p.slot>10} title={p.name} onClick={async()=>{
+        {(devicePresetState.deviceId===device?.id?devicePresetState.presets:[]).map(p=><button key={p.slot} className={airControlCore.chip(device)==="A98"&&devicePresetState.activeSlot===p.slot?"active":""} disabled={airControlCore.chip(device)==="A31"&&p.slot>10} title={p.name} onClick={async()=>{
   const presetChip=airControlCore.chip(device);
   if(presetChip==="A31"||presetChip==="A98"){
     return run(`MCUKeyShortClick:${p.slot}`);

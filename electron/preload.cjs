@@ -28,6 +28,13 @@ contextBridge.exposeInMainWorld("airCloud", {
   getLinkplayUpnpMetadata: (args) => ipcRenderer.invoke("linkplay:upnpPositionInfo", args),
   getLinkplayDevicePresets: (args) => ipcRenderer.invoke("linkplay:devicePresets", args),
   getA98DevicePresets: (args) => ipcRenderer.invoke("linkplay:a98DevicePresets", args),
+  startA98PresetEventing: (args) => ipcRenderer.invoke("linkplay:a98PresetEventingStart", args),
+  onA98PresetActive: (callback) => {
+    if (typeof callback !== "function") return () => {};
+    const handler = (_event, payload) => callback(payload);
+    ipcRenderer.on("linkplay:a98PresetActive", handler);
+    return () => ipcRenderer.removeListener("linkplay:a98PresetActive", handler);
+  },
   resolveArtworkUrl: (args) => ipcRenderer.invoke("artwork:resolve", args),
   linkplayMcuRequest: (args) => ipcRenderer.invoke("linkplay:mcuRequest", args),
   onLinkplayMcuEvent: (callback) => {

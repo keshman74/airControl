@@ -766,6 +766,533 @@ ipcMain.handle("qobuz:play",async(_e,{deviceIp,appId,token,albumId,playlistId,tr
   }catch(e){return {ok:false,error:e.message}}
 });
 
+
+// ---- A98 active preset UPnP eventing (v5.0.x) ----
+// Hardware verified:
+//   Media presets: PlayQueue CurretPlayListName == GetKeyMapping KeyN.Name
+//   Input presets: AVTransport URI/medium -> getAllRoutines audioInput -> KeyN
+//
+// IMPORTANT:
+//   PlayQueue may retain stale media queue state after switching to an input.
+//   Therefore an AVTransport event which positively identifies an input wins.
+//   Transport-state-only events never clear the remembered active preset.
+
+const A98_EVENT_PORT = 9998;
+const A98_EVENT_TIMEOUT_SECONDS = 1800;
+const A98_EVENT_RENEW_MS = 25 * 60 * 1000;
+
+let a98EventServer = null;
+const a98EventSubscriptions = new Map();
+const a98PresetRuntime = new Map();
+
+function a98XmlDecode(value=""){
+  return String(value)
+    .replace(/&quot;/g,'"')
+    .replace(/&apos;/g,"'")
+    .replace(/&lt;/g,"<")
+    .replace(/&gt;/g,">")
+    .replace(/&amp;/g,"&");
+}
+
+function a98XmlAttr(xml,tag,attr="val"){
+  const re=new RegExp(
+    `<${tag}\\b[^>]*\\b${attr}=(?:"([^"]*)"|'([^']*)')[^>]*\\/?>`,
+    "i"
+  );
+  const m=String(xml||"").match(re);
+  return m ? a98XmlDecode(m[1] ?? m[2] ?? "") : "";
+}
+
+function a98NormalizeInput(value=""){
+  const v=String(value||"")
+    .trim()
+    .toLowerCase()
+    .replace(/_/g,"-")
+    .replace(/\s+/g,"-");
+
+  if(v==="optical" || v==="spdif" || v==="optical-in") return "optical";
+  if(v==="line-in" || v==="linein" || v==="aux" || v==="aux-in") return "line-in";
+  if(v==="bluetooth" || v==="bt") return "bluetooth";
+
+  return v;
+}
+
+function a98EmitActivePreset(deviceIp,slot,reason){
+  const runtime=a98PresetRuntime.get(deviceIp);
+  if(!runtime || !Number.isInteger(slot) || slot<1 || slot>12) return;
+
+  if(runtime.activeSlot===slot) return;
+  runtime.activeSlot=slot;
+
+  console.log(`[A98 PRESET] ${deviceIp} active slot ${slot} (${reason})`);
+
+  for(const win of BrowserWindow.getAllWindows()){
+    try{
+      win.webContents.send("linkplay:a98PresetActive",{
+        ip:deviceIp,
+        slot,
+        reason
+      });
+    }catch{}
+  }
+}
+
+async function a98BuildPresetRuntime(deviceIp){
+  const presetResult=await linkplayGetA98DevicePresets({
+    ip:deviceIp,
+    timeout:5000
+  });
+
+  if(!presetResult?.ok){
+    throw new Error(presetResult?.error || "Could not load A98 preset mapping");
+  }
+
+  // linkplayGetA98DevicePresets intentionally returns renderer-safe display
+  // data. For media active matching we additionally need the original
+  // timestamped KeyN.Name, so read GetKeyMapping directly here.
+  const soapBody=
+`<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Body>
+<u:GetKeyMapping xmlns:u="urn:schemas-wiimu-com:service:PlayQueue:1"></u:GetKeyMapping>
+</s:Body>
+</s:Envelope>`;
+
+  const queueContext=await new Promise((resolve,reject)=>{
+    const req=http.request({
+      hostname:deviceIp,
+      port:59152,
+      path:"/upnp/control/PlayQueue1",
+      method:"POST",
+      agent:false,
+      headers:{
+        "Content-Type":'text/xml; charset="utf-8"',
+        "SOAPACTION":'"urn:schemas-wiimu-com:service:PlayQueue:1#GetKeyMapping"',
+        "Content-Length":Buffer.byteLength(soapBody),
+        "Connection":"close"
+      }
+    },res=>{
+      const chunks=[];
+      res.on("data",c=>chunks.push(c));
+      res.on("end",()=>{
+        const raw=Buffer.concat(chunks).toString("utf8");
+        if(res.statusCode<200 || res.statusCode>=300)
+          return reject(new Error(`GetKeyMapping HTTP ${res.statusCode}`));
+
+        const m=raw.match(/<QueueContext>([\s\S]*?)<\/QueueContext>/i);
+        if(!m) return reject(new Error("GetKeyMapping QueueContext missing"));
+
+        resolve(a98XmlDecode(m[1]));
+      });
+    });
+
+    req.setTimeout(5000,()=>req.destroy(new Error("GetKeyMapping timed out")));
+    req.on("error",reject);
+    req.end(soapBody);
+  });
+
+  const mediaByRawName=new Map();
+  const routineIdBySlot=new Map();
+
+  for(let slot=1;slot<=12;slot++){
+    const km=queueContext.match(
+      new RegExp(`<Key${slot}>([\\s\\S]*?)<\\/Key${slot}>`,"i")
+    );
+    if(!km) continue;
+
+    const block=km[1];
+    const name=(block.match(/<Name>([\s\S]*?)<\/Name>/i)||[])[1];
+    const routineId=(block.match(/<RoutineId>([\s\S]*?)<\/RoutineId>/i)||[])[1];
+
+    if(name){
+      const rawName=a98XmlDecode(name).trim();
+      if(rawName) mediaByRawName.set(rawName,slot);
+    }
+
+    if(routineId){
+      const id=a98XmlDecode(routineId).trim();
+      if(id && id.toLowerCase()!=="empty")
+        routineIdBySlot.set(slot,id);
+    }
+  }
+
+  const routinesResult=await linkplayGet({
+    ip:deviceIp,
+    command:"getAllRoutines",
+    protocol:"https",
+    port:443,
+    timeout:5000
+  });
+
+  const inputByNormalizedName=new Map();
+
+  if(routinesResult?.ok){
+    let data=routinesResult.data;
+
+    if(typeof data==="string"){
+      try{ data=JSON.parse(data); }catch{ data=null; }
+    }
+
+    const routines=Array.isArray(data?.routines) ? data.routines : [];
+
+    for(const [slot,routineId] of routineIdBySlot){
+      const routine=routines.find(r=>String(r?.id||"")===routineId);
+      if(!routine) continue;
+
+      const step=(routine.steps||[]).find(
+        x=>String(x?.type||"").toLowerCase()==="audioinput"
+      );
+
+      const input=a98NormalizeInput(step?.payload?.input||"");
+      if(input) inputByNormalizedName.set(input,slot);
+    }
+  }
+
+  const existing=a98PresetRuntime.get(deviceIp);
+
+  const runtime={
+    mediaByRawName,
+    inputByNormalizedName,
+    activeSlot:existing?.activeSlot ?? null
+  };
+
+  a98PresetRuntime.set(deviceIp,runtime);
+
+  console.log(
+    `[A98 PRESET] mapping ready ${deviceIp}: ` +
+    `${mediaByRawName.size} media, ${inputByNormalizedName.size} inputs`
+  );
+
+  return runtime;
+}
+
+function a98HandlePlayQueueEvent(deviceIp,body){
+  const runtime=a98PresetRuntime.get(deviceIp);
+  if(!runtime) return;
+
+  // LastChange is XML-escaped inside the UPnP property.
+  const decoded=a98XmlDecode(body);
+  const playlist=a98XmlAttr(decoded,"CurretPlayListName");
+
+  if(!playlist) return;
+
+  const slot=runtime.mediaByRawName.get(playlist);
+  if(slot){
+    a98EmitActivePreset(deviceIp,slot,"playqueue");
+  }
+}
+
+function a98HandleAVTransportEvent(deviceIp,body){
+  const runtime=a98PresetRuntime.get(deviceIp);
+  if(!runtime) return;
+
+  const decoded=a98XmlDecode(body);
+
+  const candidates=[
+    a98XmlAttr(decoded,"CurrentTrackURI"),
+    a98XmlAttr(decoded,"AVTransportURI"),
+    a98XmlAttr(decoded,"PlaybackStorageMedium")
+  ]
+    .map(a98NormalizeInput)
+    .filter(Boolean);
+
+  for(const input of candidates){
+    const slot=runtime.inputByNormalizedName.get(input);
+    if(slot){
+      a98EmitActivePreset(deviceIp,slot,"avtransport");
+      return;
+    }
+  }
+
+  // Deliberately do nothing for STOPPED / PAUSED_PLAYBACK-only events.
+  // They carry no input identity and must not clear activeSlot.
+}
+
+function a98FindSubscriptionBySid(sid){
+  const target=String(sid||"").trim();
+  if(!target) return null;
+
+  for(const [key,sub] of a98EventSubscriptions){
+    if(sub.sid===target) return {key,sub};
+  }
+  return null;
+}
+
+function a98StartEventServer(){
+  if(a98EventServer) return;
+
+  a98EventServer=http.createServer((req,res)=>{
+    if(req.method!=="NOTIFY"){
+      res.writeHead(200,{"Content-Length":"0"});
+      res.end();
+      return;
+    }
+
+    const chunks=[];
+    let size=0;
+
+    req.on("data",chunk=>{
+      size+=chunk.length;
+      if(size<=1024*1024) chunks.push(chunk);
+    });
+
+    req.on("end",()=>{
+      const body=size<=1024*1024
+        ? Buffer.concat(chunks).toString("utf8")
+        : "";
+
+      const found=a98FindSubscriptionBySid(req.headers.sid);
+
+      if(found){
+        const {sub}=found;
+
+        if(sub.kind==="playqueue")
+          a98HandlePlayQueueEvent(sub.deviceIp,body);
+        else if(sub.kind==="avtransport")
+          a98HandleAVTransportEvent(sub.deviceIp,body);
+      }
+
+      res.writeHead(200,{"Content-Length":"0"});
+      res.end();
+    });
+  });
+
+  a98EventServer.on("error",err=>{
+    console.error("A98 preset event server:",err.message);
+  });
+
+  a98EventServer.listen(A98_EVENT_PORT,"0.0.0.0",()=>{
+    console.log(`[A98 EVENT] listener ready on port ${A98_EVENT_PORT}`);
+  });
+}
+
+function a98UnsubscribeOne(key){
+  return new Promise(resolve=>{
+    const sub=a98EventSubscriptions.get(key);
+    if(!sub) return resolve({ok:true});
+
+    if(sub.renewTimer){
+      clearTimeout(sub.renewTimer);
+      sub.renewTimer=null;
+    }
+
+    const req=http.request({
+      hostname:sub.deviceIp,
+      port:59152,
+      path:sub.eventPath,
+      method:"UNSUBSCRIBE",
+      agent:false,
+      headers:{
+        "SID":sub.sid,
+        "Connection":"close"
+      }
+    },res=>{
+      res.resume();
+      const ok=res.statusCode>=200 && res.statusCode<300;
+      a98EventSubscriptions.delete(key);
+      resolve({ok,status:res.statusCode});
+    });
+
+    req.setTimeout(3000,()=>req.destroy(new Error("A98 UNSUBSCRIBE timed out")));
+    req.on("error",()=>{
+      a98EventSubscriptions.delete(key);
+      resolve({ok:false});
+    });
+    req.end();
+  });
+}
+
+function a98RenewSubscription(key){
+  return new Promise(resolve=>{
+    const sub=a98EventSubscriptions.get(key);
+    if(!sub) return resolve({ok:false,error:"Subscription missing"});
+
+    const req=http.request({
+      hostname:sub.deviceIp,
+      port:59152,
+      path:sub.eventPath,
+      method:"SUBSCRIBE",
+      agent:false,
+      headers:{
+        "SID":sub.sid,
+        "TIMEOUT":`Second-${A98_EVENT_TIMEOUT_SECONDS}`,
+        "Connection":"close"
+      }
+    },res=>{
+      res.resume();
+
+      const sid=String(res.headers.sid||sub.sid).trim();
+      const ok=res.statusCode>=200 && res.statusCode<300;
+
+      if(ok){
+        sub.sid=sid;
+        sub.renewTimer=setTimeout(
+          ()=>a98RenewSubscription(key),
+          A98_EVENT_RENEW_MS
+        );
+      }
+
+      resolve({ok,status:res.statusCode,sid});
+    });
+
+    req.setTimeout(5000,()=>req.destroy(new Error("A98 renewal timed out")));
+    req.on("error",e=>{
+      console.error(`[A98 EVENT] renewal ${key}:`,e.message);
+
+      // Retry sooner on a transient renewal failure.
+      if(a98EventSubscriptions.has(key)){
+        sub.renewTimer=setTimeout(
+          ()=>a98RenewSubscription(key),
+          60*1000
+        );
+      }
+
+      resolve({ok:false,error:e.message});
+    });
+
+    req.end();
+  });
+}
+
+function a98SubscribeOne({deviceIp,eventPath,callbackPath,key,kind}){
+  return new Promise(resolve=>{
+    const existing=a98EventSubscriptions.get(key);
+
+    // React may invoke the start IPC more than once. Never create duplicate
+    // device subscriptions while the existing one is alive.
+    if(existing?.sid){
+      return resolve({
+        ok:true,
+        status:200,
+        sid:existing.sid,
+        reused:true
+      });
+    }
+
+    const lanIp=sameSubnetAddress(deviceIp);
+
+    if(!lanIp || lanIp==="127.0.0.1")
+      return resolve({ok:false,error:"Could not determine LAN address"});
+
+    const req=http.request({
+      hostname:deviceIp,
+      port:59152,
+      path:eventPath,
+      method:"SUBSCRIBE",
+      agent:false,
+      headers:{
+        "CALLBACK":`<http://${lanIp}:${A98_EVENT_PORT}${callbackPath}>`,
+        "NT":"upnp:event",
+        "TIMEOUT":`Second-${A98_EVENT_TIMEOUT_SECONDS}`,
+        "Connection":"close"
+      }
+    },res=>{
+      res.resume();
+
+      const sid=String(res.headers.sid||"").trim();
+      const ok=res.statusCode>=200 && res.statusCode<300 && !!sid;
+
+      if(ok){
+        const sub={
+          deviceIp,
+          eventPath,
+          callbackPath,
+          sid,
+          kind,
+          renewTimer:null
+        };
+
+        sub.renewTimer=setTimeout(
+          ()=>a98RenewSubscription(key),
+          A98_EVENT_RENEW_MS
+        );
+
+        a98EventSubscriptions.set(key,sub);
+      }
+
+      console.log(
+        `[A98 EVENT] SUBSCRIBE ${key}:`,
+        res.statusCode,
+        sid||"<no SID>"
+      );
+
+      resolve({
+        ok,
+        status:res.statusCode,
+        sid,
+        error:ok?"":"SUBSCRIBE failed"
+      });
+    });
+
+    req.setTimeout(5000,()=>req.destroy(new Error("A98 SUBSCRIBE timed out")));
+    req.on("error",e=>{
+      console.error(`[A98 EVENT] SUBSCRIBE ${key}:`,e.message);
+      resolve({ok:false,error:e.message});
+    });
+    req.end();
+  });
+}
+
+async function a98StartPresetEventing(deviceIp){
+  const host=String(deviceIp||"").trim();
+
+  if(!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host))
+    return {ok:false,error:"Invalid device IP"};
+
+  a98StartEventServer();
+
+  try{
+    await a98BuildPresetRuntime(host);
+  }catch(e){
+    console.error("[A98 PRESET] mapping:",e.message);
+    return {ok:false,error:e.message};
+  }
+
+  const playQueue=await a98SubscribeOne({
+    deviceIp:host,
+    eventPath:"/upnp/event/PlayQueue1",
+    callbackPath:"/a98/playqueue",
+    key:`${host}:playqueue`,
+    kind:"playqueue"
+  });
+
+  const avTransport=await a98SubscribeOne({
+    deviceIp:host,
+    eventPath:"/upnp/event/rendertransport1",
+    callbackPath:"/a98/avtransport",
+    key:`${host}:avtransport`,
+    kind:"avtransport"
+  });
+
+  return {
+    ok:!!(playQueue.ok&&avTransport.ok),
+    playQueue,
+    avTransport,
+    activeSlot:a98PresetRuntime.get(host)?.activeSlot ?? null
+  };
+}
+
+ipcMain.handle("linkplay:a98PresetEventingStart",(_e,{ip}={})=>
+  a98StartPresetEventing(ip)
+);
+
+async function a98StopPresetEventServer(){
+  const keys=[...a98EventSubscriptions.keys()];
+
+  await Promise.allSettled(
+    keys.map(key=>a98UnsubscribeOne(key))
+  );
+
+  if(a98EventServer){
+    try{a98EventServer.close();}catch{}
+    a98EventServer=null;
+  }
+
+  a98EventSubscriptions.clear();
+  a98PresetRuntime.clear();
+}
+
+
 app.whenReady().then(() => {
   startTestAudioServer();
   startLocalMediaServer();
