@@ -402,7 +402,7 @@ function App() {
   useEffect(()=>{
     if(!device?.id||!device?.online)return;
     const chip=airControlCore.chip(device);
-    if(chip!=="A31"&&chip!=="A33")return;
+    if(chip!=="A31"&&chip!=="A98"&&chip!=="A33")return;
     let cancelled=false;
     setDevicePresetState({deviceId:device.id,loading:true,presets:[],maxSlots:chip==="A31"?20:12,error:""});
     (async()=>{
@@ -410,6 +410,8 @@ function App() {
         let result;
         if(chip==="A31"){
           result=await window.airCloud?.getLinkplayDevicePresets?.({ip:device.ip,timeout:3500});
+        } else if(chip==="A98"){
+          result=await window.airCloud?.getA98DevicePresets?.({ip:device.ip,timeout:5000});
         } else {
           const response=await api(device,"getPresetListInfo");
           if(!response?.ok)throw new Error("Cannot read A33 presets");
@@ -2529,7 +2531,8 @@ function Player({device,devicePresetState,setDevicePresetState,run,setVolume,set
       {devicePresetState.error&&devicePresetState.deviceId===device?.id&&<p>{devicePresetState.error}</p>}
       <div className="devicePresetGrid">
         {(devicePresetState.deviceId===device?.id?devicePresetState.presets:[]).map(p=><button key={p.slot} disabled={airControlCore.chip(device)==="A31"&&p.slot>10} title={p.name} onClick={async()=>{
-  if(airControlCore.chip(device)==="A31"){
+  const presetChip=airControlCore.chip(device);
+  if(presetChip==="A31"||presetChip==="A98"){
     return run(`MCUKeyShortClick:${p.slot}`);
   }
   if(!p.logo){

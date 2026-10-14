@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld("airCloud", {
   autoProbeLinkplay: (args) => ipcRenderer.invoke("linkplay:autoProbe", args),
   getLinkplayUpnpMetadata: (args) => ipcRenderer.invoke("linkplay:upnpPositionInfo", args),
   getLinkplayDevicePresets: (args) => ipcRenderer.invoke("linkplay:devicePresets", args),
+  getA98DevicePresets: (args) => ipcRenderer.invoke("linkplay:a98DevicePresets", args),
   resolveArtworkUrl: (args) => ipcRenderer.invoke("artwork:resolve", args),
   linkplayMcuRequest: (args) => ipcRenderer.invoke("linkplay:mcuRequest", args),
   onLinkplayMcuEvent: (callback) => {

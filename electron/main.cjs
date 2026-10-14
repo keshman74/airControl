@@ -335,6 +335,145 @@ function linkplayGetDevicePresets({ip, timeout=3500}={}) {
 }
 ipcMain.handle("linkplay:devicePresets",(_e,args)=>linkplayGetDevicePresets(args||{}));
 
+
+/*
+ * A98/WiiM hardware-confirmed 2026-10-14/15.
+ *
+ * Media preset assignments come from PlayQueue GetKeyMapping on port 59152.
+ * Input presets can have no Name and instead reference a RoutineId.
+ * Resolve those RoutineIds through HTTPS getAllRoutines.
+ *
+ * Return only renderer-safe fields. Do not forward Metadata, Url or other
+ * token-bearing QueueContext content.
+ */
+async function linkplayGetA98DevicePresets({ip, timeout=5000}={}) {
+  const host=String(ip||"").trim();
+  if(!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host))
+    return {ok:false,error:"Invalid device IP"};
+
+  const service="urn:schemas-wiimu-com:service:PlayQueue:1";
+  const body='<?xml version="1.0" encoding="utf-8"?>'
+    +'<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"><s:Body>'
+    +'<u:GetKeyMapping xmlns:u="'+service+'"></u:GetKeyMapping>'
+    +'</s:Body></s:Envelope>';
+
+  const keyMapping=await new Promise(resolve=>{
+    const req=http.request({
+      hostname:host,
+      port:59152,
+      path:"/upnp/control/PlayQueue1",
+      method:"POST",
+      timeout:Number(timeout)||5000,
+      agent:false,
+      headers:{
+        "Content-Type":'text/xml; charset="utf-8"',
+        "SOAPAction":'"'+service+'#GetKeyMapping"',
+        "Content-Length":Buffer.byteLength(body),
+        "Connection":"close"
+      }
+    },res=>{
+      const chunks=[];
+      let size=0;
+
+      res.on("data",c=>{
+        size+=c.length;
+        if(size<=1024*1024) chunks.push(c);
+        else req.destroy(new Error("A98 preset response too large"));
+      });
+
+      res.on("end",()=>{
+        if(size>1024*1024)return;
+
+        if(res.statusCode<200||res.statusCode>=300)
+          return resolve({ok:false,error:"A98 PlayQueue HTTP "+res.statusCode});
+
+        const xml=Buffer.concat(chunks).toString("utf8");
+        const context=xmlTag(xml,"QueueContext");
+
+        if(!context)
+          return resolve({ok:false,error:"A98 QueueContext not found"});
+
+        resolve({ok:true,context:decodeXmlEntities(context)});
+      });
+    });
+
+    req.on("timeout",()=>req.destroy(new Error("A98 GetKeyMapping timed out")));
+    req.on("error",e=>resolve({ok:false,error:e.message}));
+    req.end(body);
+  });
+
+  if(!keyMapping.ok)return keyMapping;
+
+  const routineResponse=await linkplayGet({
+    ip:host,
+    command:"getAllRoutines",
+    protocol:"https",
+    port:443,
+    timeout:Number(timeout)||5000
+  });
+
+  const routines=(
+    routineResponse?.ok &&
+    routineResponse?.data &&
+    typeof routineResponse.data==="object" &&
+    Array.isArray(routineResponse.data.routines)
+  ) ? routineResponse.data.routines : [];
+
+  const routineById=new Map(
+    routines
+      .filter(r=>r&&r.id)
+      .map(r=>[String(r.id).trim(),r])
+  );
+
+  const presets=[];
+  const pattern=/<(?:[\w-]+:)?Key(\d+)(?:\s[^>]*)?>([\s\S]*?)<\/(?:[\w-]+:)?Key\1>/gi;
+
+  for(const match of keyMapping.context.matchAll(pattern)){
+    const slot=Number(match[1]);
+    if(slot<1||slot>12)continue;
+
+    const block=match[2];
+    const rawName=xmlTag(block,"Name").trim();
+    const routineId=xmlTag(block,"RoutineId").trim();
+    const routine=routineId ? routineById.get(routineId) : null;
+
+    const name=(
+      rawName.replace(/_#~\d{4}-\d{2}-\d{2}[^]*$/,"").trim()
+      || String(routine?.name||"").trim()
+    );
+
+    if(!name)continue;
+
+    const pic=xmlTag(block,"PicUrl");
+    const metadata=decodeXmlEntities(xmlTag(block,"Metadata"));
+    const metaArt=xmlTag(metadata,"albumArtURI");
+    const source=xmlTag(block,"Source").trim();
+    const preferred=pic||metaArt;
+    const art=/^https?:\/\//i.test(preferred)?preferred:"";
+
+    let input="";
+    if(routine&&Array.isArray(routine.steps)){
+      const step=routine.steps.find(x=>x?.type==="audioInput"&&x?.payload?.input);
+      input=String(step?.payload?.input||"").trim().toLowerCase();
+    }
+
+    presets.push({
+      slot,
+      name,
+      art,
+      source,
+      routineId,
+      input
+    });
+  }
+
+  return {ok:true,presets,maxSlots:12};
+}
+
+ipcMain.handle("linkplay:a98DevicePresets",(_e,args)=>linkplayGetA98DevicePresets(args||{}));
+
+
+
 ipcMain.handle("linkplay:upnpPositionInfo", async (_event, args) => {
   return linkplayUpnpPositionInfo(args || {});
 });
