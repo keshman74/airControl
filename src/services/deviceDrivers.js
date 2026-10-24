@@ -128,12 +128,19 @@ export function parseLinkplayStatus(metadata={}, player={}, previous={}, metaInf
   // Never send the player's raw /data image URL to Chromium: these players use
   // self-signed HTTPS certificates, so an occasional resolver miss makes the
   // browser drop the image. During a transient miss, keep the last good data URL.
+  const isPlayerAirPlayArtworkPath = pathname =>
+    pathname === "/data/AirplayArtWorkData.jpeg" ||
+    /^\/data\/airplay_[0-9a-f]{32}\.jpg$/i.test(pathname);
   const isRawPlayerAirPlayArtwork = value => {
+    const raw = String(value || "").trim();
     try {
-      const parsed = new URL(String(value || "").trim());
+      if (raw.startsWith("/")) {
+        const relative = new URL(raw, "http://airplay.invalid");
+        return isPlayerAirPlayArtworkPath(relative.pathname);
+      }
+      const parsed = new URL(raw);
       return parsed.hostname === String(previous?.ip || "").trim() &&
-        parsed.pathname === "/data/AirplayArtWorkData.jpeg" &&
-        !parsed.protocol.startsWith("data:");
+        isPlayerAirPlayArtworkPath(parsed.pathname);
     } catch { return false; }
   };
   const usableArtwork = value => {

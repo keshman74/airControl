@@ -38,4 +38,25 @@ const successful = parseLinkplayStatus({}, player,
 assert.equal(successful.track.art, nextGood,
   "a successfully resolved data URL must replace the old cover");
 
+
+const a31Relative = "/data/airplay_f67a80954965fd2f79a144f41d4bbe38.jpg";
+const a31Absolute = `http://${ip}${a31Relative}`;
+const relativeMiss = parseLinkplayStatus({}, player,
+  {ip, source:"AirPlay", track:{title:"Ultra", art:oldGood}},
+  {metaData:{title:"Ultra", albumArtURI:a31Relative}}, {art:a31Relative});
+assert.equal(relativeMiss.track.art, oldGood,
+  "transient A31 relative artwork failure must retain the last good image");
+
+const relativeFirstMiss = parseLinkplayStatus({}, player,
+  {ip, source:"AirPlay", track:{title:"Ultra", art:a31Relative}},
+  {metaData:{title:"Ultra", albumArtURI:a31Relative}}, {art:a31Relative});
+assert.equal(relativeFirstMiss.track.art, "",
+  "raw relative A31 artwork must never reach Chromium");
+
+const absoluteFirstMiss = parseLinkplayStatus({}, player,
+  {ip, source:"AirPlay", track:{title:"Ultra", art:a31Absolute}},
+  {metaData:{title:"Ultra", albumArtURI:a31Absolute}}, {art:a31Absolute});
+assert.equal(absoluteFirstMiss.track.art, "",
+  "raw absolute A31 artwork URL must never reach Chromium");
+
 console.log("AirPlay artwork stability regression passed.");

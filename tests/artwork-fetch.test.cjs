@@ -3,7 +3,7 @@ const assert=require("node:assert/strict");
 const fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const http=require("node:http"),https=require("node:https");
 const {execFileSync}=require("node:child_process");
-const {fetchArtworkDataUrl,localPlayerArtworkTlsOptions}=require("../electron/artwork-fetch.cjs");
+const {fetchArtworkDataUrl,localPlayerArtworkTlsOptions,normalizeArtworkUrl}=require("../electron/artwork-fetch.cjs");
 (async()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"aircontrol-artwork-test-"));
  execFileSync("openssl",["req","-x509","-newkey","rsa:2048","-nodes","-keyout",path.join(dir,"key.pem"),"-out",path.join(dir,"cert.pem"),"-days","1","-subj","/CN=localhost"],{stdio:"ignore"});
@@ -47,15 +47,35 @@ const {fetchArtworkDataUrl,localPlayerArtworkTlsOptions}=require("../electron/ar
   assert.equal((await fetchArtworkDataUrl({url:"file:///tmp/test.jpg"})).ok,false);
   for(const host of ["10.0.0.5","172.16.0.5","172.31.255.254","192.168.0.21"]){
    assert.equal(localPlayerArtworkTlsOptions(new URL("https://"+host+"/data/AirplayArtWorkData.jpeg"),host).rejectUnauthorized,false);
+   assert.equal(localPlayerArtworkTlsOptions(new URL("https://"+host+"/data/airplay_f67a80954965fd2f79a144f41d4bbe38.jpg"),host).rejectUnauthorized,false);
   }
   for(const host of ["172.15.0.5","172.32.0.5","127.0.0.1","8.8.8.8","192.168.0.21.evil.test"]){
    assert.deepEqual(localPlayerArtworkTlsOptions(new URL("https://"+host+"/data/AirplayArtWorkData.jpeg"),host),{});
   }
-  const plain=http.createServer((_req,res)=>{res.writeHead(200,{"Content-Type":"image/jpeg"});res.end(jpeg);});
+  const relative="/data/airplay_f67a80954965fd2f79a144f41d4bbe38.jpg";
+  const a31Ip="192.168.0.35";
+  const normalized=normalizeArtworkUrl({url:relative,deviceIp:a31Ip,deviceProtocol:"http",devicePort:80});
+  assert.equal(normalized.toString(),"http://192.168.0.35"+relative);
+  assert.equal(normalizeArtworkUrl({url:"/data/not-artwork.jpg",deviceIp:a31Ip}),null);
+  assert.equal(normalizeArtworkUrl({url:relative}),null);
+  const plain=http.createServer((req,res)=>{res.writeHead(200,{"Content-Type":"image/jpeg"});res.end(jpeg);});
   await new Promise(r=>plain.listen(0,"127.0.0.1",r));
-  try{assert.equal((await fetchArtworkDataUrl({url:"http://127.0.0.1:"+plain.address().port+"/cover.jpg"})).ok,true);}
-  finally{await new Promise(r=>plain.close(r));}
-  console.log("Actual HTTPS regression passed: self-signed baseline fails, selected-player AirPlay succeeds without Content-Type, byte-exact data URL, host/path isolation, redirect recheck, timeout and HTTP compatibility.");
+  try{
+   assert.equal((await fetchArtworkDataUrl({url:"http://127.0.0.1:"+plain.address().port+"/cover.jpg"})).ok,true);
+   const realHttpGet=http.get;
+   http.get=(url,options,cb)=>{
+    const routed=new URL(url);
+    if(routed.hostname===a31Ip){routed.hostname="127.0.0.1";routed.port=String(plain.address().port);}
+    return realHttpGet(routed,options,cb);
+   };
+   try{
+    result=await fetchArtworkDataUrl({url:relative,deviceIp:a31Ip,deviceProtocol:"http",devicePort:80});
+    assert.equal(result.ok,true);assert.equal(result.mime,"image/jpeg");
+    assert.equal(result.dataUrl,"data:image/jpeg;base64,"+jpeg.toString("base64"));
+    assert.equal(result.sourceUrl,"http://192.168.0.35"+relative);
+   }finally{http.get=realHttpGet;}
+  }finally{await new Promise(r=>plain.close(r));}
+  console.log("Actual artwork regression passed: selected-player TLS isolation plus A31 relative UPnP artwork path normalization/fetch, response bytes, timeout, redirect and HTTP compatibility.");
  }finally{
   https.get=realGet;server.closeAllConnections();await new Promise(r=>server.close(r));
   fs.rmSync(dir,{recursive:true,force:true});

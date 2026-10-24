@@ -706,7 +706,7 @@ function App() {
         const metaOriginalArt = String(rich?.albumArtURI || rich?.["albumArtURI "] || "").trim();
         if (metaOriginalArt && window.airCloud?.resolveArtworkUrl) {
           let resolvedMetaArt = "";
-          const rr = await window.airCloud.resolveArtworkUrl({url:metaOriginalArt, timeout:5000, deviceIp:target.ip});
+          const rr = await window.airCloud.resolveArtworkUrl({url:metaOriginalArt, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
           if (rr?.ok && rr.dataUrl) resolvedMetaArt = rr.dataUrl;
           if (!resolvedMetaArt && /\/radio-cover\//i.test(metaOriginalArt)) {
             const saved = radioNowPlayingByDevice[target.id];
@@ -720,7 +720,7 @@ function App() {
               } catch {}
             }
             if (candidate) {
-              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000, deviceIp:target.ip});
+              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
               resolvedMetaArt = (fr?.ok && fr.dataUrl) ? fr.dataUrl : candidate;
             }
           }
@@ -747,7 +747,7 @@ function App() {
         // old /radio-cover URLs may point at a cache from the previous process.
         if (upnpInfo?.art && window.airCloud?.resolveArtworkUrl) {
           const originalArt = String(upnpInfo.art || "").trim();
-          const rr = await window.airCloud.resolveArtworkUrl({url:originalArt, timeout:5000, deviceIp:target.ip});
+          const rr = await window.airCloud.resolveArtworkUrl({url:originalArt, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
           if (rr?.ok && rr.dataUrl) {
             upnpInfo = {...upnpInfo, art:rr.dataUrl, originalArt};
           } else if (/\/radio-cover\//i.test(originalArt)) {
@@ -764,7 +764,7 @@ function App() {
               } catch {}
             }
             if (candidate) {
-              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000, deviceIp:target.ip});
+              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
               upnpInfo = {...upnpInfo, art:(fr?.ok && fr.dataUrl) ? fr.dataUrl : candidate, originalArt};
             }
           }
