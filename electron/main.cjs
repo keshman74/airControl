@@ -342,32 +342,7 @@ ipcMain.handle("linkplay:upnpPositionInfo", async (_event, args) => {
 
 // v4.4.17: load artwork in Electron main and return a data URL to the renderer.
 // This avoids renderer mixed-content/CORS/CDN restrictions for Linkplay metadata art.
-function fetchArtworkDataUrl({ url, timeout = 5000 } = {}, redirects = 0) {
-  return new Promise((resolve) => {
-    let parsed;
-    try { parsed = new URL(String(url || "").trim()); }
-    catch { return resolve({ok:false,status:0,error:"Invalid artwork URL"}); }
-    if (!["http:","https:"].includes(parsed.protocol)) return resolve({ok:false,status:0,error:"Unsupported artwork protocol"});
-    const transport = parsed.protocol === "https:" ? https : http;
-    const req = transport.get(parsed, {timeout:Number(timeout)||5000, headers:{"User-Agent":"airControl/4.4.21","Accept":"image/*,*/*;q=0.8"}}, (res) => {
-      if ([301,302,303,307,308].includes(res.statusCode) && res.headers.location && redirects < 4) {
-        res.resume();
-        const next = new URL(res.headers.location, parsed).toString();
-        return fetchArtworkDataUrl({url:next,timeout}, redirects+1).then(resolve);
-      }
-      if (!(res.statusCode >= 200 && res.statusCode < 300)) { res.resume(); return resolve({ok:false,status:res.statusCode||0,error:`Artwork HTTP ${res.statusCode||0}`}); }
-      const chunks=[]; let size=0; const max=5*1024*1024;
-      res.on("data", c=>{ size+=c.length; if(size<=max) chunks.push(c); else req.destroy(new Error("Artwork too large")); });
-      res.on("end", ()=>{
-        if(size>max) return;
-        const data=Buffer.concat(chunks); const mime=String(res.headers["content-type"]||"image/jpeg").split(";")[0].trim()||"image/jpeg";
-        resolve({ok:true,status:res.statusCode,dataUrl:`data:${mime};base64,${data.toString("base64")}`,mime,size,sourceUrl:parsed.toString()});
-      });
-    });
-    req.on("timeout", ()=>req.destroy(new Error("Artwork request timed out")));
-    req.on("error", e=>resolve({ok:false,status:0,error:e.message}));
-  });
-}
+const { fetchArtworkDataUrl } = require("./artwork-fetch.cjs");
 ipcMain.handle("artwork:resolve", async (_event, args) => fetchArtworkDataUrl(args || {}));
 
 // --- Room EQ test-signal server ------------------------------------------------
