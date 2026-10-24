@@ -124,8 +124,25 @@ export function parseLinkplayStatus(metadata={}, player={}, previous={}, metaInf
   const previousTitle = String(previous.track?.title || "").trim();
   const titleChanged = Boolean(title && previousTitle && title !== previousTitle);
   const sameTrackForArtwork = !richTitle || !playerTitle || richTitle.trim().toLowerCase() === playerTitle.trim().toLowerCase();
-  const richArtwork = sameTrackForArtwork ? String(rich?.albumArtURI || rich?.["albumArtURI "] || "").trim() : "";
-  const upnpArtwork = String(upnp?.art || "").trim();
+  // Local AirPlay artwork is fetched by Electron and converted to a data URL.
+  // Never send the player's raw /data image URL to Chromium: these players use
+  // self-signed HTTPS certificates, so an occasional resolver miss makes the
+  // browser drop the image. During a transient miss, keep the last good data URL.
+  const isRawPlayerAirPlayArtwork = value => {
+    try {
+      const parsed = new URL(String(value || "").trim());
+      return parsed.hostname === String(previous?.ip || "").trim() &&
+        parsed.pathname === "/data/AirplayArtWorkData.jpeg" &&
+        !parsed.protocol.startsWith("data:");
+    } catch { return false; }
+  };
+  const usableArtwork = value => {
+    const art = String(value || "").trim();
+    return art && !isRawPlayerAirPlayArtwork(art) ? art : "";
+  };
+  const richArtwork = sameTrackForArtwork ? usableArtwork(rich?.albumArtURI || rich?.["albumArtURI "]) : "";
+  const upnpArtwork = usableArtwork(upnp?.art);
+  const previousArtwork = usableArtwork(previous?.track?.art);
   const liveUrl = String(player?.uri || player?.url || rich?.url || upnp?.url || "").trim();
   const playerArtist = hexToText(player?.Artist);
   const playerAlbum = hexToText(player?.Album);
@@ -141,8 +158,8 @@ export function parseLinkplayStatus(metadata={}, player={}, previous={}, metaInf
   // values do not erase the last valid cover while the media identity is stable.
   const networkPlayback = source === "Network" || source === "DLNA";
   const art = networkPlayback
-    ? (upnpArtwork || richArtwork || (titleChanged ? "" : (previous.track?.art || "")))
-    : (richArtwork || upnpArtwork || (titleChanged ? "" : (previous.track?.art || "")));
+    ? (upnpArtwork || richArtwork || (titleChanged ? "" : previousArtwork))
+    : (richArtwork || upnpArtwork || (titleChanged ? "" : previousArtwork));
 
   return {
     name: metadata?.DeviceName || metadata?.GroupName || previous.name || "airScope Linkplay",
