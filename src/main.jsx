@@ -759,7 +759,7 @@ function App() {
         const metaOriginalArt = String(rich?.albumArtURI || rich?.["albumArtURI "] || "").trim();
         if (metaOriginalArt && window.airCloud?.resolveArtworkUrl) {
           let resolvedMetaArt = "";
-          const rr = await window.airCloud.resolveArtworkUrl({url:metaOriginalArt, timeout:5000});
+          const rr = await window.airCloud.resolveArtworkUrl({url:metaOriginalArt, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
           if (rr?.ok && rr.dataUrl) resolvedMetaArt = rr.dataUrl;
           if (!resolvedMetaArt && /\/radio-cover\//i.test(metaOriginalArt)) {
             const saved = radioNowPlayingByDevice[target.id];
@@ -773,7 +773,7 @@ function App() {
               } catch {}
             }
             if (candidate) {
-              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000});
+              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
               resolvedMetaArt = (fr?.ok && fr.dataUrl) ? fr.dataUrl : candidate;
             }
           }
@@ -800,7 +800,7 @@ function App() {
         // old /radio-cover URLs may point at a cache from the previous process.
         if (upnpInfo?.art && window.airCloud?.resolveArtworkUrl) {
           const originalArt = String(upnpInfo.art || "").trim();
-          const rr = await window.airCloud.resolveArtworkUrl({url:originalArt, timeout:5000});
+          const rr = await window.airCloud.resolveArtworkUrl({url:originalArt, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
           if (rr?.ok && rr.dataUrl) {
             upnpInfo = {...upnpInfo, art:rr.dataUrl, originalArt};
           } else if (/\/radio-cover\//i.test(originalArt)) {
@@ -817,7 +817,7 @@ function App() {
               } catch {}
             }
             if (candidate) {
-              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000});
+              const fr = await window.airCloud.resolveArtworkUrl({url:candidate, timeout:5000, deviceIp:target.ip, deviceProtocol:target.protocol, devicePort:target.port});
               upnpInfo = {...upnpInfo, art:(fr?.ok && fr.dataUrl) ? fr.dataUrl : candidate, originalArt};
             }
           }
@@ -1824,6 +1824,14 @@ function buildRadioTrackOverride(device, station) {
   if (station._a33Remembered && !isA33DirectHttpRadio(device)) return null;
   const base = device?.track || {};
 
+  // AirPlay artwork recovered from the player's UPnP metadata belongs to the
+  // current native playback and must never be masked by a persisted Radio
+  // Browser station. A31 can advertise a root-relative /data/airplay_<hash>.jpg;
+  // Electron resolves that device-local URL to a data:image/... URL before it
+  // reaches device.track.art. At that point native AirPlay artwork wins.
+  const nativeArtwork = String(base.art || "").trim();
+  const hasResolvedNativeArtwork = /^data:image\//i.test(nativeArtwork);
+
   // v4.4.12: Radio Browser metadata/artwork is a renderer-only overlay for
   // every device family. Older Linkplay firmware can keep reporting a stale
   // finite `total` from the item that played before the live radio stream.
@@ -1842,7 +1850,7 @@ function buildRadioTrackOverride(device, station) {
     // but never mask artwork recovered from the player's UPnP metadata. If the
     // saved station has no favicon (common after reconnect/restart), the same
     // device.track artwork is used by Player, Overview and Zone Cards.
-    art: station.favicon || base.art || "",
+    art: hasResolvedNativeArtwork ? nativeArtwork : (station.favicon || nativeArtwork || ""),
     service: "Internet Radio",
     url: station.url || ""
   };
