@@ -1,0 +1,22 @@
+//
+//  LPMusicKitDemo.pch
+//  LPMusicKitDemo
+//
+//  Created by sunyu on 2020/5/9.
+//  Copyright © 2020 sunyu. All rights reserved.
+//
+
+#ifndef LPMusicKitDemo_h
+#define LPMusicKitDemo_h
+#import "BasicViewController.h"
+#import "GlobalUI.h"
+#import <LPMDPKit/LPMDPKit.h>
+#import <LPMusicKit/LPMusicKit.h>
+
+
+#define NEWTUNEIN_PRESENT_OPEN 1 //打开预置和闹钟
+
+#import "MBProgressHUD.h"
+#import "Toast+UIView.h"
+
+#endif /* LPMusicKitDemo_h */

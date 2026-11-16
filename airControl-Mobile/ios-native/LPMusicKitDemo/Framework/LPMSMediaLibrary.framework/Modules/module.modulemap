@@ -1,0 +1,6 @@
+framework module LPMSMediaLibrary {
+  umbrella header "LPMSMediaLibrary.h"
+
+  export *
+  module * { export * }
+}

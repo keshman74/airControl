@@ -1,0 +1,6 @@
+framework module LPMSNAS {
+  umbrella header "LPMSNAS.h"
+
+  export *
+  module * { export * }
+}

@@ -1,0 +1,6 @@
+framework module LPMusicKit {
+  umbrella header "LPMusicKit.h"
+
+  export *
+  module * { export * }
+}

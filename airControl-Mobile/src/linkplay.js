@@ -2,6 +2,7 @@ import { CapacitorHttp } from '@capacitor/core';
 
 const SERVICE = 'urn:schemas-wiimu-com:service:PlayQueue:1';
 const SOAP = 'http://schemas.xmlsoap.org/soap/envelope/';
+export const PLAY_QUEUE_SERVICE = SERVICE;
 export const queues = ['TotalQueue', 'CurrentQueue', 'USBDiskQueue'];
 
 export function privateHost(input) {
@@ -148,11 +149,16 @@ export class LinkplayClient {
         const control = localURL(controlPath, this.host, base);
         const scpd = await this.request(localURL(scpdPath, this.host, base));
         if (scpd.status !== 200) continue;
-        const action = descendants(xml(scpd.data), 'action').find(node => field(node, 'name') === 'BrowseQueue');
-        const args = Array.from(child(action, 'argumentList')?.children ?? []);
-        if (args.some(node => field(node, 'name') === 'QueueName' && field(node, 'direction') === 'in') &&
-            args.some(node => field(node, 'name') === 'QueueContext' && field(node, 'direction') === 'out')) {
+        const advertised = new Map(descendants(xml(scpd.data), 'action').map(node => [
+          field(node, 'name'), Array.from(child(node, 'argumentList')?.children ?? []).map(argument => ({
+            name: field(argument, 'name'), direction: field(argument, 'direction'),
+          })),
+        ]));
+        const args = advertised.get('BrowseQueue') ?? [];
+        if (args.some(argument => argument.name === 'QueueName' && argument.direction === 'in') &&
+            args.some(argument => argument.name === 'QueueContext' && argument.direction === 'out')) {
           this.control = control;
+          this.actions = advertised;
           return;
         }
       } catch {
@@ -162,28 +168,50 @@ export class LinkplayClient {
     throw new Error('Устройство не объявило совместимую операцию BrowseQueue.');
   }
 
-  async browse(queue) {
-    if (!queues.includes(queue)) throw new Error('Неизвестная очередь.');
+  async playQueueAction(action, args) {
     if (!this.control) await this.discoverQueue();
-    const body = `<s:Envelope xmlns:s="${SOAP}"><s:Body><u:BrowseQueue xmlns:u="${SERVICE}"><QueueName>${queue}</QueueName></u:BrowseQueue></s:Body></s:Envelope>`;
+    const advertised = this.actions?.get(action);
+    if (!advertised) throw new Error(`Устройство не объявило операцию ${action}.`);
+    const inputs = advertised.filter(argument => argument.direction === 'in');
+    if (inputs.some(argument => typeof args[argument.name] !== 'string')) {
+      throw new Error(`Не хватает аргументов операции ${action}.`);
+    }
+    const bodyArgs = inputs.map(argument => `<${argument.name}>${escapeXml(args[argument.name])}</${argument.name}>`).join('');
+    const body = `<s:Envelope xmlns:s="${SOAP}"><s:Body><u:${action} xmlns:u="${SERVICE}">${bodyArgs}</u:${action}></s:Body></s:Envelope>`;
     const response = await this.request(this.control, {
       method: 'POST', data: body,
-      headers: { 'Content-Type': 'text/xml; charset="utf-8"', SOAPAction: `"${SERVICE}#BrowseQueue"` },
+      headers: { 'Content-Type': 'text/xml; charset="utf-8"', SOAPAction: `"${SERVICE}#${action}"` },
     });
     const envelope = xml(response.data);
     const fault = descendants(envelope, 'Fault')[0];
     if (fault) {
-      const error = descendants(fault, 'errorCode')[0]?.textContent;
-      throw new Error(error ? `Устройство отклонило запрос очереди (UPnP ${error}).` : 'Устройство отклонило запрос очереди.');
+      const code = descendants(fault, 'errorCode')[0]?.textContent;
+      throw new Error(code ? `Устройство отклонило ${action} (UPnP ${code}).` : `Устройство отклонило ${action}.`);
     }
-    const soapBody = child(envelope, 'Body');
-    const reply = child(soapBody, 'BrowseQueueResponse');
-    const context = child(reply, 'QueueContext');
-    if (response.status !== 200 || envelope.namespaceURI !== SOAP || soapBody?.namespaceURI !== SOAP ||
-        reply?.namespaceURI !== SERVICE || !context) {
-      throw new Error(`Неожиданный ответ BrowseQueue (HTTP ${response.status}).`);
+    const bodyNode = child(envelope, 'Body');
+    const reply = child(bodyNode, `${action}Response`);
+    if (response.status !== 200 || envelope.namespaceURI !== SOAP || bodyNode?.namespaceURI !== SOAP || reply?.namespaceURI !== SERVICE) {
+      throw new Error(`Неожиданный ответ ${action} (HTTP ${response.status}).`);
     }
-    const raw = context.firstElementChild ? new XMLSerializer().serializeToString(context.firstElementChild) : context.textContent;
+    const result = {};
+    for (const node of Array.from(reply.children)) result[node.localName] = node.textContent.trim();
+    return result;
+  }
+
+  async browse(queue) {
+    if (!queues.includes(queue)) throw new Error('Неизвестная очередь.');
+    if (!this.control) await this.discoverQueue();
+    const result = await this.playQueueAction('BrowseQueue', { QueueName: queue });
+    const raw = result.QueueContext ? decodeSoapValue(result.QueueContext) : '';
     return raw.trim() ? parseQueueContext(raw) : { kind: 'playlist', tracks: [], activeIndex: null };
   }
+}
+
+export function escapeXml(value) {
+  return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll("'", '&apos;').replaceAll('"', '&quot;');
+}
+
+function decodeSoapValue(value) {
+  // QueueContext may be plain text containing XML or XML entities nested in SOAP.
+  return value.replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&quot;', '"').replaceAll('&apos;', "'").replaceAll('&amp;', '&');
 }

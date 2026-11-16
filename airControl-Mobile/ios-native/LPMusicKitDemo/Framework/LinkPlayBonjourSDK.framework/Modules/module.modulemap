@@ -1,0 +1,6 @@
+framework module LinkPlayBonjourSDK {
+  umbrella header "LinkPlayBonjourSDK.h"
+
+  export *
+  module * { export * }
+}

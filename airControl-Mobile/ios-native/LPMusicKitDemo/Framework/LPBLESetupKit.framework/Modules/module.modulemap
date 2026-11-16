@@ -1,0 +1,6 @@
+framework module LPBLESetupKit {
+  umbrella header "LPBLESetupKit.h"
+
+  export *
+  module * { export * }
+}

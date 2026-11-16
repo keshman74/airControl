@@ -6,7 +6,8 @@
   "scripts": {
     "build": "vite build",
     "sync": "npm run build && cap sync",
-    "ios": "cap open ios",
+    "ios": "open ios-native/LPMusicKitDemo.xcodeproj",
+    "ios:capacitor": "cap open ios",
     "android": "cap open android"
   },
   "dependencies": {
